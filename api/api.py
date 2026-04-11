@@ -17,3 +17,6 @@ service = MaterialCostService()
 async def get_materialkosten():
     # Returns both table_data (formatted strings) and solutions (raw numbers)
     return service.get_full_package()
+@app.get("/")
+async def health_check():
+    return {"Connected": True}
