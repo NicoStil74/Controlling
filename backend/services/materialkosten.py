@@ -124,6 +124,23 @@ class MaterialCostService:
                     lifo_value += qty * m['price']
 
 
+
+        # FIFO Periodisch
+        fifo_value = 0
+        left_amount = final_amount
+        for m in reversed(movements):
+            if final_amount <= 0:
+                break
+
+            if m['process'] in ['Anfangsbestand', 'Zugang']:
+                qty = m['quantity']
+                if qty >= left_amount:
+                    fifo_value += left_amount * m['price']
+                    break
+                else:
+                    left_amount -= qty
+                    fifo_value += qty * m['price']
+
         #Materialkosten = bew. AB + bewertete Zugänge - bewerteter EB
         moving_average = round(avg_price * curr_amount, 2)
         weighted_average /= additions
@@ -134,7 +151,7 @@ class MaterialCostService:
             "weighted_average": round(weighted_average, 2),
             "moving_average": moving_average,
             "lifo": lifo_value,
-            "fifo": 0
+            "fifo": fifo_value
         }
 
     def format_movements(self, movements: list):
