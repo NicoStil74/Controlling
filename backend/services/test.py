@@ -8,7 +8,7 @@ def printj(item):
 
 m = MaterialCostService()
 
-# package, dataframe = m.get_full_package()
+package = m.get_full_package()
 movements = [
     {"process": "Anfangsbestand", "date": "01.03", "quantity": 150, "price": 40.00},
     {"process": "Zugang",         "date": "02.03", "quantity": 250, "price": 42.00},
@@ -19,6 +19,3 @@ movements = [
     {"process": "Abgang",         "date": "13.03", "quantity": 50,  "price": None}
 ]
 
-solution = m.calculate_valuation_results(movements)
-
-printj(solution)

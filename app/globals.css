@@ -1,0 +1,35 @@
+@import "tailwindcss";
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Erzwingt helles Farbschema auf Browser-Ebene */
+:root {
+  color-scheme: light;
+}
+
+html, body {
+  background-color: #ffffff !important;
+  color: #18181b !important;
+}
+
+body {
+  margin: 0;
+  padding: 0;
+  min-height: 100vh;
+  /* Sanfter heller Verlauf, der garantiert nicht dunkel wird */
+  background-image: 
+    radial-gradient(circle at 0% 0%, #f0f4ff 0%, transparent 50%),
+    radial-gradient(circle at 100% 0%, #fff1f2 0%, transparent 50%),
+    radial-gradient(circle at 50% 50%, #ffffff 0%, transparent 100%) !important;
+  background-attachment: fixed;
+}
+
+/* Deaktiviere alle potenziellen Dark-Mode Overrides */
+@media (prefers-color-scheme: dark) {
+  html, body {
+    background-color: #ffffff !important;
+    color: #18181b !important;
+  }
+}

@@ -1,6 +1,5 @@
 import random
 from datetime import datetime, timedelta
-from turtledemo.clock import current_day
 
 
 def format_german_number(value, is_price=False):
@@ -185,13 +184,8 @@ class MaterialCostService:
             quantities.append(r['quantity'])
             processes.append(r['process'])
 
-        dataframe = {
-            "prices": prices,
-            "quantities": quantities,
-            "processes": processes
-        }
 
         return {
             "table_data": table_data,
             "solutions": solutions
-        }, dataframe
+        }
