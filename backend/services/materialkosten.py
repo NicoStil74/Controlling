@@ -106,22 +106,22 @@ class MaterialCostService:
                 valuation -= qty * avg_price
                 curr_amount -= qty
 
-        # LIFO method
+        # LIFO PERIODISCH
+        lifo_value = 0
         init_amount = movements[0]["quantity"]
-        if init_amount >= final_amount:
-            final_value = final_amount * movements[0]["price"]
-        else:
-            final_value = init_amount * movements[0]["price"]
-            left_amount = init_amount - final_amount
-            for i in range(1, len(movements)):
-                if movements[i]['process'] == 'Zugang':
-                    if movements[i]['quantity'] > left_amount:
-                        final_value += movements[i]['quantity'] * movements[i]['price']
-                        break
+        left_amount = final_amount
+        for m in movements:
+            if final_amount <= 0:
+                break
+
+            if m['process'] in ['Anfangsbestand', 'Zugang']:
+                qty = m['quantity']
+                if qty >= left_amount:
+                    lifo_value += left_amount * m['price']
+                    break
                 else:
-                    continue
-
-
+                    left_amount -= qty
+                    lifo_value += qty * m['price']
 
 
         #Materialkosten = bew. AB + bewertete Zugänge - bewerteter EB
@@ -133,7 +133,7 @@ class MaterialCostService:
             "closing_stock": curr_amount,
             "weighted_average": round(weighted_average, 2),
             "moving_average": moving_average,
-            "lifo": final_value,
+            "lifo": lifo_value,
             "fifo": 0
         }
 
