@@ -1,5 +1,6 @@
 import random
 from datetime import datetime, timedelta
+from turtledemo.clock import current_day
 
 
 def format_german_number(value, is_price=False):
@@ -71,7 +72,7 @@ class MaterialCostService:
         weighted_average = 0
         additions = 0
         price_average = 0
-        valuation = 0
+        current_valuation = 0
 
         for m in movements:
             moved_quantity = m.get("quantity")
@@ -81,16 +82,50 @@ class MaterialCostService:
 
             if process == "Abgang":
                 curr_amount -= moved_quantity
-                valuation -= moved_quantity * price
+                current_valuation -= moved_quantity * price
             else:
-                valuation += moved_quantity * price
+                current_valuation += moved_quantity * price
                 curr_amount += moved_quantity #
-                price_average = valuation / curr_amount
                 additions += moved_quantity
                 weighted_average += moved_quantity * price
 
-        moving_average = round(price_average * curr_amount, 2)
 
+        final_amount = curr_amount # save final amount
+
+        # MOVING - AVERAGE
+        curr_amount = 0
+        valuation = 0
+        for m in movements:
+            qty = m.get('quantity')
+            if m.get('process') in ['Anfangsbestand', 'Zugang']:
+                valuation += qty * m.get('price')
+                curr_amount += qty
+
+                avg_price = valuation / curr_amount
+            else:
+                valuation -= qty * avg_price
+                curr_amount -= qty
+
+        # LIFO method
+        init_amount = movements[0]["quantity"]
+        if init_amount >= final_amount:
+            final_value = final_amount * movements[0]["price"]
+        else:
+            final_value = init_amount * movements[0]["price"]
+            left_amount = init_amount - final_amount
+            for i in range(1, len(movements)):
+                if movements[i]['process'] == 'Zugang':
+                    if movements[i]['quantity'] > left_amount:
+                        final_value += movements[i]['quantity'] * movements[i]['price']
+                        break
+                else:
+                    continue
+
+
+
+
+        #Materialkosten = bew. AB + bewertete Zugänge - bewerteter EB
+        moving_average = round(avg_price * curr_amount, 2)
         weighted_average /= additions
         weighted_average *= curr_amount
 
@@ -98,7 +133,7 @@ class MaterialCostService:
             "closing_stock": curr_amount,
             "weighted_average": round(weighted_average, 2),
             "moving_average": moving_average,
-            "lifo": 0,
+            "lifo": final_value,
             "fifo": 0
         }
 
@@ -124,8 +159,22 @@ class MaterialCostService:
         raw_data = self.generate_scenario()
         solutions = self.calculate_valuation_results(raw_data)
         table_data = self.format_movements(raw_data)
-        
+
+        prices = []
+        quantities = []
+        processes = []
+        for r in raw_data:
+            prices.append(r["price"])
+            quantities.append(r['quantity'])
+            processes.append(r['process'])
+
+        dataframe = {
+            "prices": prices,
+            "quantities": quantities,
+            "processes": processes
+        }
+
         return {
             "table_data": table_data,
             "solutions": solutions
-        }
+        }, dataframe
