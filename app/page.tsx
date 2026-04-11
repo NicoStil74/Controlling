@@ -18,9 +18,14 @@ export default function Home() {
       <div className="max-w-6xl mx-auto space-y-16">
         {/* Header */}
         <header className="flex items-center justify-between">
-          <h1 className="text-3xl font-extrabold tracking-tight text-zinc-900">
-            Learn Controlling
-          </h1>
+          <div className="space-y-1">
+            <h1 className="text-3xl font-extrabold tracking-tight text-zinc-900">
+              Learn Controlling
+            </h1>
+            <span className="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-blue-100 text-blue-800">
+              Beta
+            </span>
+          </div>
           <div className="w-10 h-10 rounded-full bg-zinc-200"></div>
         </header>
 
