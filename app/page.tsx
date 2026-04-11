@@ -19,7 +19,7 @@ export default function Home() {
         {/* Header */}
         <header className="flex items-center justify-between">
           <h1 className="text-3xl font-extrabold tracking-tight text-zinc-900">
-            lernen
+            Learn Controlling
           </h1>
           <div className="w-10 h-10 rounded-full bg-zinc-200"></div>
         </header>

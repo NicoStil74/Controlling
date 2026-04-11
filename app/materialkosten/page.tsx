@@ -109,7 +109,7 @@ export default function Materialkosten() {
     }
 
     /**
-     * Compares user inputs with the solutions from the backend.
+     * Compares user inputs with the solutions from the api.
      */
     const checkSolutions = () => {
         if (!solutions) return
