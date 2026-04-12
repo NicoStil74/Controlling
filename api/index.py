@@ -1,8 +1,8 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from api.services.kennzahlen import KennzahlenService
-from api.services.materialkosten import MaterialCostService
+from services.kennzahlen import KennzahlenService
+from services.materialkosten import MaterialCostService
 
 app = FastAPI(title="Learning App API")
 
