@@ -57,7 +57,7 @@ export default function Materialkosten() {
         setLoading(true)
         setShowSolutions(false)
         try {
-            const response = await fetch('/api/materialkosten')
+            const response = await fetch('api/materialkosten')
             const result = await response.json()
             setData(result.table_data || [])
             setSolutions(result.solutions || null)

@@ -64,6 +64,8 @@ class KennzahlenService():
         self.data = activa + passiva
         self.guv = guv
 
+        return self.data, self.guv
+
 
     def calculate_figures(self, data, guv):
 
@@ -108,5 +110,15 @@ class KennzahlenService():
 
         return self.figures
 
+
+    def get_package(self):
+        data, guv = self.generate()
+        figures = self.calculate_figures(data, guv)
+
+        return {
+            'balance': data,
+            'guv': guv,
+            'figures': figures
+        }
 
 
