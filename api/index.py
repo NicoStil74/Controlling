@@ -1,6 +1,6 @@
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-
+from mangum import Mangum
 from services.kennzahlen import KennzahlenService
 from services.materialkosten import MaterialCostService
 
@@ -27,3 +27,5 @@ async def get_kennzahlen():
 @app.get("/")
 async def health_check():
     return {"Connected": True}
+
+handler = Mangum(app)
