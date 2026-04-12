@@ -337,7 +337,7 @@ export default function Kennzahlen() {
                                 <tr className="bg-orange-50 font-bold border-t-2 border-orange-200">
                                     <td className="py-2 px-2 text-sm">Gewinn vor Steuer</td>
                                     <td className="py-2 px-2 text-right text-sm">
-                                        {guv.find(item => item.name === 'Gewinn vor Steuer')?.amount.toLocaleString('de-DE')}
+                                        {guv.find(item => item.name === 'Gewinn vor Steuer')?.amount?.toLocaleString('de-DE')}
                                     </td>
                                 </tr>
                             </tbody>
