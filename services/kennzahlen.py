@@ -8,56 +8,82 @@ from pymupdf.mupdf import pint_assign
 class KennzahlenService():
     def __init__(self):
         self.data = []
-        self.balance_sum = random.randint(250, 2500)
         self.figures = {}
         self.guv = []
         self.steuersatz = 0.3
 
     def generate(self):
-
+        balance_sum = random.randint(250, 5000)
         av_ratio = random.uniform(0.3, 0.6)
         uv_ratio = 1 -  av_ratio
 
         # AKTIVA
         activa = [
-            {"type": "Anlagevermögen", "name": "Grundstücke u. Gebäude", "amount": round(self.balance_sum * av_ratio * 0.7)},
-            {"type": "Anlagevermögen", "name": "Fuhrpark", "amount": round(self.balance_sum * av_ratio * 0.2)},
-            {"type": "Anlagevermögen", "name": "Betriebs- u. Geschäftsausstattung", "amount": round(self.balance_sum * av_ratio * 0.1)},
+            {"type": "Anlagevermögen", "name": "Grundstücke u. Gebäude", "amount": round(balance_sum * av_ratio * 0.7, 2)},
+            {"type": "Anlagevermögen", "name": "Fuhrpark", "amount": round(balance_sum * av_ratio * 0.2, 2)},
+            {"type": "Anlagevermögen", "name": "Betriebs- u. Geschäftsausstattung", "amount": round(balance_sum * av_ratio * 0.1,2)},
 
-            {"type": "Umlaufvermögen", "name": "Warenbestände", "amount": round(self.balance_sum * uv_ratio * 0.4)},
-            {"type": "Umlaufvermögen", "name": "Forderungen aus LuL", "amount": round(self.balance_sum * uv_ratio * 0.3)},
-            {"type": "Umlaufvermögen", "name": "Wertpapiere (nicht betriebsn.)", "amount": round(self.balance_sum * uv_ratio * 0.1)},
-            {"type": "Umlaufvermögen", "name": "Bank", "amount": round(self.balance_sum * uv_ratio * 0.2)},
+            {"type": "Umlaufvermögen", "name": "Warenbestände", "amount": round(balance_sum * uv_ratio * 0.4,2)},
+            {"type": "Umlaufvermögen", "name": "Forderungen aus LuL", "amount": round(balance_sum * uv_ratio * 0.3,2)},
+            {"type": "Umlaufvermögen", "name": "Wertpapiere (nicht betriebsn.)", "amount": round(balance_sum * uv_ratio * 0.1,2)},
+            {"type": "Umlaufvermögen", "name": "Bank", "amount": round(balance_sum * uv_ratio * 0.2,2)},
         ]
 
         ek_ratio = random.uniform(0.2, 0.4)
         fk_ratio = 1.0 - ek_ratio
 
         passiva = [
-            {"type": "Eigenkapital", "name": "Gezeichnetes Kapital", "amount": round(self.balance_sum * ek_ratio * 0.8)},
-            {"type": "Eigenkapital", "name": "Rücklagen", "amount": round(self.balance_sum * ek_ratio * 0.2)},
+            {"type": "Eigenkapital", "name": "Gezeichnetes Kapital", "amount": round(balance_sum * ek_ratio * 0.8,2)},
+            {"type": "Eigenkapital", "name": "Rücklagen", "amount": round(balance_sum * ek_ratio * 0.2,2)},
 
-            {"type": "Fremdkapital", "name": "Steuerrückstellungen", "amount": round(self.balance_sum * fk_ratio * 0.05)},
-            {"type": "Fremdkapital", "name": "lfr. Darlehen", "amount": round(self.balance_sum * fk_ratio * 0.5)},
-            {"type": "Fremdkapital", "name": "kfr. Darlehen", "amount": round(self.balance_sum * fk_ratio * 0.2)},
-            {"type": "Fremdkapital", "name": "Kundenanzahlungen", "amount": round(self.balance_sum * fk_ratio * 0.05)},
-            {"type": "Fremdkapital", "name": "Verbindlichkeiten aus LuL", "amount": round(self.balance_sum * fk_ratio * 0.2)},
+            {"type": "Fremdkapital", "name": "Steuerrückstellungen", "amount": round(balance_sum * fk_ratio * 0.05,2)},
+            {"type": "Fremdkapital", "name": "lfr. Darlehen", "amount": round(balance_sum * fk_ratio * 0.5,2)},
+            {"type": "Fremdkapital", "name": "kfr. Darlehen", "amount": round(balance_sum * fk_ratio * 0.2,2)},
+            {"type": "Fremdkapital", "name": "Kundenanzahlungen", "amount": round(balance_sum * fk_ratio * 0.05,2)},
+            {"type": "Fremdkapital", "name": "Verbindlichkeiten aus LuL", "amount": round(balance_sum * fk_ratio * 0.2,2)},
         ]
 
+        # Calculate balance sheet components for GuV logic
+        av_total = sum(item['amount'] for item in activa if item['type'] == 'Anlagevermögen')
+        loans_total = sum(item['amount'] for item in passiva if 'Darlehen' in item['name'])
+        liquid_total = sum(item['amount'] for item in activa if item['name'] in ['Bank', 'Wertpapiere (nicht betriebsn.)'])
+
+        # Logical GUV generation
+        revenue = round(balance_sum * random.uniform(0.8, 1.2), 2)
+        warenaufwand = round(revenue * random.uniform(0.4, 0.5), 2)
+        personalaufwand = round(revenue * random.uniform(0.15, 0.25), 2)
+        abschreibungen = round(av_total * random.uniform(0.05, 0.1), 2)
+        zinsaufwand = round(loans_total * random.uniform(0.03, 0.06), 2)
+        zinsertrag = round(liquid_total * random.uniform(0.01, 0.03), 2)
+        
+        bestandsveraenderung = round(revenue * random.uniform(-0.02, 0.02), 2)
+        versicherungen = round(revenue * random.uniform(0.02, 0.04), 2)
+        sonst_aufwand = round(revenue * random.uniform(0.05, 0.1), 2)
+
+        # Calculate EBT
+        ertrag_sum = revenue + zinsertrag
+        aufwand_sum = warenaufwand + personalaufwand + abschreibungen + zinsaufwand + versicherungen + sonst_aufwand + (bestandsveraenderung if bestandsveraenderung > 0 else 0)
+        # Adjust bestandsveraenderung: if negative, it's like an expense (reduction), if positive it's like income
+        # In German accounting: + is increase in stock (income-like), - is decrease (expense-like)
+        
+        ebt = ertrag_sum + (bestandsveraenderung if bestandsveraenderung > 0 else 0) - aufwand_sum + (bestandsveraenderung if bestandsveraenderung < 0 else 0)
+        # Simplified: ebt = Revenue + Zinsertrag + Bestandsveränd - (rest of expenses)
+        ebt = revenue + zinsertrag + bestandsveraenderung - warenaufwand - personalaufwand - abschreibungen - zinsaufwand - versicherungen - sonst_aufwand
+
         guv = [
-            {"type": "Ertrag", "name": "Umsatzerlöse", "amount": 1730},
-            {"type": "Ertrag", "name": "Zinsertrag", "amount": 3},
+            {"type": "Ertrag", "name": "Umsatzerlöse", "amount": revenue},
+            {"type": "Ertrag", "name": "Zinsertrag", "amount": zinsertrag},
 
-            {"type": "Aufwand", "name": "Bestandsveränderung", "amount": 20},
-            {"type": "Aufwand", "name": "Personalaufwand", "amount": 280},
+            {"type": "Aufwand", "name": "Bestandsveränderung", "amount": bestandsveraenderung},
+            {"type": "Aufwand", "name": "Personalaufwand", "amount": personalaufwand},
 
-            {"type": "Aufwand", "name": "Warenaufwand", "amount": 700},
-            {"type": "Aufwand", "name": "Versicherungen", "amount": 50},
-            {"type": "Aufwand", "name": "Zinsaufwand", "amount": 5},
-            {"type": "Aufwand", "name": "Abschreibungen", "amount": 50},
-            {"type": "Aufwand", "name": "sonst. betriebl. Aufwand", "amount": 514},
+            {"type": "Aufwand", "name": "Warenaufwand", "amount": warenaufwand},
+            {"type": "Aufwand", "name": "Versicherungen", "amount": versicherungen},
+            {"type": "Aufwand", "name": "Zinsaufwand", "amount": zinsaufwand},
+            {"type": "Aufwand", "name": "Abschreibungen", "amount": abschreibungen},
+            {"type": "Aufwand", "name": "sonst. betriebl. Aufwand", "amount": sonst_aufwand},
 
-            {"type": "Ergebnis", "name": "Gewinn vor Steuer", "amount": 114},
+            {"type": "Ergebnis", "name": "Gewinn vor Steuer", "amount": round(ebt, 2)},
         ]
 
 
