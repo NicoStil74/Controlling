@@ -146,11 +146,11 @@ class MaterialCostService:
         weighted_average *= curr_amount
 
         return {
-            "closing_stock": curr_amount,
-            "weighted_average": round(weighted_average, 2),
-            "moving_average": moving_average,
-            "lifo": lifo_value,
-            "fifo": fifo_value
+            "closing_stock": round(curr_amount,0),
+            "weighted_average": round(weighted_average, 0),
+            "moving_average": round(moving_average,0),
+            "lifo": round(lifo_value,0),
+            "fifo": round(fifo_value,0)
         }
 
     def format_movements(self, movements: list):
