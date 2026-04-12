@@ -2,14 +2,14 @@ import Image from 'next/image'
 import Link from 'next/link'
 
 const tiles = [
-  { name: 'Material-\nkosten', color: 'border-blue-200 bg-blue-50/60 text-blue-700' },
-  { name: 'Kostenstellen-\nrechnung', color: 'border-green-200 bg-green-50/60 text-green-700' },
-  { name: 'Prozesskosten-\nrechnung', color: 'border-purple-200 bg-purple-50/60 text-purple-700' },
-  { name: 'Kurzfristige\nErfolgrechnung', color: 'border-yellow-200 bg-yellow-50/60 text-yellow-700' },
-  { name: 'Programm-\nplanung', color: 'border-red-200 bg-red-50/60 text-red-700' },
-  { name: 'Target\nCosting', color: 'border-pink-200 bg-pink-50/60 text-pink-700' },
-  { name: 'Planungskostenrechnung /\nAbweichungsanalyse', color: 'border-indigo-200 bg-indigo-50/60 text-indigo-700', span: 'md:col-span-2' },
-  { name: 'Kennzahlen', color: 'border-orange-200 bg-orange-50/60 text-orange-700' },
+  { name: 'Material-\nkosten', color: 'border-blue-200 bg-blue-50/60 text-blue-700', emoji: '📦' },
+  { name: 'Kostenstellen-\nrechnung', color: 'border-green-200 bg-green-50/60 text-green-700', emoji: '🏢' },
+  { name: 'Prozesskosten-\nrechnung', color: 'border-purple-200 bg-purple-50/60 text-purple-700', emoji: '⚙️' },
+  { name: 'Kurzfristige\nErfolgrechnung', color: 'border-yellow-200 bg-yellow-50/60 text-yellow-700', emoji: '📈' },
+  { name: 'Programm-\nplanung', color: 'border-red-200 bg-red-50/60 text-red-700', emoji: '🗓️' },
+  { name: 'Target\nCosting', color: 'border-pink-200 bg-pink-50/60 text-pink-700', emoji: '🎯' },
+  { name: 'Planungskostenrechnung /\nAbweichungsanalyse', color: 'border-indigo-200 bg-indigo-50/60 text-indigo-700', span: 'md:col-span-2', emoji: '📊' },
+  { name: 'Kennzahlen', color: 'border-orange-200 bg-orange-50/60 text-orange-700', emoji: '🔢' },
 ]
 
 export default function Home() {
@@ -55,6 +55,9 @@ export default function Home() {
               href={`/${tile.name.toLowerCase().replace(/[\n-]/g, '').replace(/\s+/g, '').replace(/[^\w]/g, '')}`}
               className={`group relative overflow-hidden p-8 rounded-[2rem] border-2 ${tile.color.split(' ')[0]} ${tile.color.split(' ')[1]} ${tile.span || ''} transition-all hover:translate-y-[-4px] hover:shadow-2xl active:scale-[0.98] duration-300 flex flex-col justify-end min-h-[180px] md:min-h-[220px] shadow-sm`}
             >
+              <div className="absolute top-6 left-6 text-3xl">
+                {tile.emoji}
+              </div>
               <div className="absolute top-6 right-6 text-zinc-400 group-hover:text-zinc-600 transition-colors">
                 <div className="p-2 rounded-full bg-white/70 backdrop-blur-sm border border-zinc-100">
                   <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><polyline points="9 18 15 12 9 6"></polyline></svg>

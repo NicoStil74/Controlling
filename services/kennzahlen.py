@@ -8,40 +8,39 @@ from pymupdf.mupdf import pint_assign
 class KennzahlenService():
     def __init__(self):
         self.data = []
-        self.balance_sum = random.randint(250, 5000)
         self.figures = {}
         self.guv = []
         self.steuersatz = 0.3
 
     def generate(self):
-
+        balance_sum = random.randint(250, 5000)
         av_ratio = random.uniform(0.3, 0.6)
         uv_ratio = 1 -  av_ratio
 
         # AKTIVA
         activa = [
-            {"type": "Anlagevermögen", "name": "Grundstücke u. Gebäude", "amount": round(self.balance_sum * av_ratio * 0.7, 2)},
-            {"type": "Anlagevermögen", "name": "Fuhrpark", "amount": round(self.balance_sum * av_ratio * 0.2, 2)},
-            {"type": "Anlagevermögen", "name": "Betriebs- u. Geschäftsausstattung", "amount": round(self.balance_sum * av_ratio * 0.1,2)},
+            {"type": "Anlagevermögen", "name": "Grundstücke u. Gebäude", "amount": round(balance_sum * av_ratio * 0.7, 2)},
+            {"type": "Anlagevermögen", "name": "Fuhrpark", "amount": round(balance_sum * av_ratio * 0.2, 2)},
+            {"type": "Anlagevermögen", "name": "Betriebs- u. Geschäftsausstattung", "amount": round(balance_sum * av_ratio * 0.1,2)},
 
-            {"type": "Umlaufvermögen", "name": "Warenbestände", "amount": round(self.balance_sum * uv_ratio * 0.4,2)},
-            {"type": "Umlaufvermögen", "name": "Forderungen aus LuL", "amount": round(self.balance_sum * uv_ratio * 0.3,2)},
-            {"type": "Umlaufvermögen", "name": "Wertpapiere (nicht betriebsn.)", "amount": round(self.balance_sum * uv_ratio * 0.1,2)},
-            {"type": "Umlaufvermögen", "name": "Bank", "amount": round(self.balance_sum * uv_ratio * 0.2,2)},
+            {"type": "Umlaufvermögen", "name": "Warenbestände", "amount": round(balance_sum * uv_ratio * 0.4,2)},
+            {"type": "Umlaufvermögen", "name": "Forderungen aus LuL", "amount": round(balance_sum * uv_ratio * 0.3,2)},
+            {"type": "Umlaufvermögen", "name": "Wertpapiere (nicht betriebsn.)", "amount": round(balance_sum * uv_ratio * 0.1,2)},
+            {"type": "Umlaufvermögen", "name": "Bank", "amount": round(balance_sum * uv_ratio * 0.2,2)},
         ]
 
         ek_ratio = random.uniform(0.2, 0.4)
         fk_ratio = 1.0 - ek_ratio
 
         passiva = [
-            {"type": "Eigenkapital", "name": "Gezeichnetes Kapital", "amount": round(self.balance_sum * ek_ratio * 0.8,2)},
-            {"type": "Eigenkapital", "name": "Rücklagen", "amount": round(self.balance_sum * ek_ratio * 0.2,2)},
+            {"type": "Eigenkapital", "name": "Gezeichnetes Kapital", "amount": round(balance_sum * ek_ratio * 0.8,2)},
+            {"type": "Eigenkapital", "name": "Rücklagen", "amount": round(balance_sum * ek_ratio * 0.2,2)},
 
-            {"type": "Fremdkapital", "name": "Steuerrückstellungen", "amount": round(self.balance_sum * fk_ratio * 0.05,2)},
-            {"type": "Fremdkapital", "name": "lfr. Darlehen", "amount": round(self.balance_sum * fk_ratio * 0.5,2)},
-            {"type": "Fremdkapital", "name": "kfr. Darlehen", "amount": round(self.balance_sum * fk_ratio * 0.2,2)},
-            {"type": "Fremdkapital", "name": "Kundenanzahlungen", "amount": round(self.balance_sum * fk_ratio * 0.05,2)},
-            {"type": "Fremdkapital", "name": "Verbindlichkeiten aus LuL", "amount": round(self.balance_sum * fk_ratio * 0.2,2)},
+            {"type": "Fremdkapital", "name": "Steuerrückstellungen", "amount": round(balance_sum * fk_ratio * 0.05,2)},
+            {"type": "Fremdkapital", "name": "lfr. Darlehen", "amount": round(balance_sum * fk_ratio * 0.5,2)},
+            {"type": "Fremdkapital", "name": "kfr. Darlehen", "amount": round(balance_sum * fk_ratio * 0.2,2)},
+            {"type": "Fremdkapital", "name": "Kundenanzahlungen", "amount": round(balance_sum * fk_ratio * 0.05,2)},
+            {"type": "Fremdkapital", "name": "Verbindlichkeiten aus LuL", "amount": round(balance_sum * fk_ratio * 0.2,2)},
         ]
 
         # Calculate balance sheet components for GuV logic
@@ -50,7 +49,7 @@ class KennzahlenService():
         liquid_total = sum(item['amount'] for item in activa if item['name'] in ['Bank', 'Wertpapiere (nicht betriebsn.)'])
 
         # Logical GUV generation
-        revenue = round(self.balance_sum * random.uniform(0.8, 1.2), 2)
+        revenue = round(balance_sum * random.uniform(0.8, 1.2), 2)
         warenaufwand = round(revenue * random.uniform(0.4, 0.5), 2)
         personalaufwand = round(revenue * random.uniform(0.15, 0.25), 2)
         abschreibungen = round(av_total * random.uniform(0.05, 0.1), 2)

@@ -3,17 +3,65 @@
 import Link from 'next/link'
 import { useState, useEffect } from 'react'
 
-interface DataRow{
-    type: string,
-    name: string,
-    amount: number,
+interface DataRowProps {
+    label: string;
+    amount?: number;
 }
 
+const DataRow = ({ label, amount }: DataRowProps) => (
+    <tr className="divide-x divide-gray-100">
+        <td className="py-2 px-2 whitespace-nowrap text-sm">{label}</td>
+        <td className="py-2 px-2 text-right font-mono text-sm">
+            {amount !== undefined ? amount.toLocaleString('de-DE') : '-'}
+        </td>
+    </tr>
+);
+
+interface InputRowProps {
+    label: string;
+    inputKey: string;
+    inputs: Record<string, string>;
+    feedback: Record<string, 'correct' | 'wrong' | 'neutral'>;
+    handleInputChange: (key: string, value: string) => void;
+    suffix?: string;
+}
+
+const InputRow = ({ label, inputKey, inputs, feedback, handleInputChange, suffix = "%" }: InputRowProps) => (
+    <tr className={`divide-x divide-gray-100 transition-colors ${
+        feedback[inputKey] === 'correct' ? 'bg-green-100 border-l-4 border-l-green-600' : 
+        feedback[inputKey] === 'wrong' ? 'bg-red-100 border-l-4 border-l-red-600' : 'hover:bg-gray-50'
+    }`}>
+        <td className="py-2 px-3 text-sm font-medium">{label}</td>
+        <td className="py-1 px-2 text-right relative">
+            <input 
+                type="text" 
+                value={inputs[inputKey]}
+                onChange={(e) => handleInputChange(inputKey, e.target.value)}
+                placeholder="0,00"
+                className={`w-full text-right p-1.5 pr-8 border-2 rounded-lg focus:ring-2 outline-none text-sm font-mono transition-all ${
+                    feedback[inputKey] === 'correct' ? 'border-green-600 focus:ring-green-500 bg-white' : 
+                    feedback[inputKey] === 'wrong' ? 'border-red-600 focus:ring-red-500 bg-white' : 
+                    'border-gray-200 focus:ring-blue-500'
+                }`}
+            />
+            <span className={`absolute right-3 top-1/2 -translate-y-1/2 text-xs font-bold font-mono ${
+                feedback[inputKey] === 'correct' ? 'text-green-700' : 
+                feedback[inputKey] === 'wrong' ? 'text-red-700' : 'text-gray-400'
+            }`}>{suffix}</span>
+        </td>
+    </tr>
+);
+
+interface DataItem {
+    type: string;
+    name: string;
+    amount: number;
+}
 
 export default function Kennzahlen() {
 
-    const [balance, setBalance] = useState<DataRow[]>([])
-    const [guv, setGuV] = useState<DataRow[]>([])
+    const [balance, setBalance] = useState<DataItem[]>([])
+    const [guv, setGuV] = useState<DataItem[]>([])
     const [figures, setFigures] = useState<any>({})
     const [showSolutions, setShowSolutions] = useState(false)
     const [feedback, setFeedback] = useState<Record<string, 'correct' | 'wrong' | 'neutral'>>({})
@@ -140,45 +188,11 @@ export default function Kennzahlen() {
         setShowSolutions(!showSolutions)
     }
 
-    const DataRow = ({ label, amount }: { label: string, amount?: number }) => (
-        <tr className="divide-x divide-gray-100">
-            <td className="py-2 px-2 whitespace-nowrap text-sm">{label}</td>
-            <td className="py-2 px-2 text-right font-mono text-sm">
-                {amount !== undefined ? amount.toLocaleString('de-DE') : '-'}
-            </td>
-        </tr>
-    );
-
     const sumAktiva = balance
         .filter(item => item.type === 'Anlagevermögen' || item.type === 'Umlaufvermögen')
         .reduce((sum, item) => sum + item.amount, 0);
 
-    const sumPassiva = balance
-        .filter(item => item.type === 'Eigenkapital' || item.type === 'Fremdkapital')
-        .reduce((sum, item) => sum + item.amount, 0);
-
-    const InputRow = ({ label, inputKey, suffix = "%" }: { label: string, inputKey: string, suffix?: string }) => (
-        <tr className={`divide-x divide-gray-100 hover:bg-gray-50 transition-colors ${
-            feedback[inputKey] === 'correct' ? 'bg-green-50' : 
-            feedback[inputKey] === 'wrong' ? 'bg-red-50' : ''
-        }`}>
-            <td className="py-2 px-2 text-sm">{label}</td>
-            <td className="py-1 px-2 text-right relative">
-                <input 
-                    type="text" 
-                    value={inputs[inputKey]}
-                    onChange={(e) => handleInputChange(inputKey, e.target.value)}
-                    placeholder="0,00"
-                    className={`w-full text-right p-1 pr-8 border rounded focus:ring-1 outline-none text-sm font-mono ${
-                        feedback[inputKey] === 'correct' ? 'border-green-500 focus:ring-green-500' : 
-                        feedback[inputKey] === 'wrong' ? 'border-red-500 focus:ring-red-500' : 
-                        'border-gray-200 focus:ring-blue-500'
-                    }`}
-                />
-                <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-gray-400 font-mono">{suffix}</span>
-            </td>
-        </tr>
-    );
+    const sumPassiva = sumAktiva
 
     return (
         <main className="p-8 max-w-6xl mx-auto space-y-12">
@@ -191,7 +205,7 @@ export default function Kennzahlen() {
                         Analyse der Bilanz und GuV zur Berechnung betriebswirtschaftlicher Kennzahlen.
                     </p>
                 </div>
-                <div className="flex itemsB-center gap-4">
+                <div className="flex items-center gap-4">
                     <button
                         onClick={fetchData}
                         disabled={loading}
@@ -221,9 +235,20 @@ export default function Kennzahlen() {
             </div>
             
             {/* Bilanz Sektion */}
-            <div className="bg-white shadow-md rounded-lg overflow-hidden border border-gray-200">
-                <div className="bg-gray-100 px-6 py-4 border-b border-gray-200">
+            <div className="bg-white shadow-md rounded-lg border border-gray-200">
+                <div className="bg-gray-100 px-6 py-4 border-b border-gray-200 flex items-center gap-2 rounded-t-lg">
                     <h2 className="text-xl font-semibold">Bilanz in TEUR</h2>
+                    <div className="group relative">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="text-zinc-400 hover:text-zinc-600 transition-colors cursor-help">
+                            <circle cx="12" cy="12" r="10"></circle>
+                            <path d="M12 16v-4"></path>
+                            <path d="M12 8h.01"></path>
+                        </svg>
+                        <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2 bg-zinc-800 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none font-medium shadow-xl z-[100]">
+                            Geringfügige Abweichungen durch Rundungen sind möglich.
+                            <div className="absolute top-full left-1/2 -translate-x-1/2 border-8 border-transparent border-t-zinc-800"></div>
+                        </div>
+                    </div>
                 </div>
                 
                 <div className="grid grid-cols-1 lg:grid-cols-2 divide-y lg:divide-y-0 lg:divide-x divide-gray-200">
@@ -252,7 +277,9 @@ export default function Kennzahlen() {
                             <tfoot>
                                 <tr className="bg-blue-50 font-bold border-t-2 border-blue-200">
                                     <td className="py-3 px-2 text-lg">Summe Aktiva</td>
-                                    <td className="py-3 px-2 text-right text-lg">{sumAktiva.toLocaleString('de-DE')}</td>
+                                    <td className="py-3 px-2 text-right text-lg">
+                                        {sumAktiva.toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                    </td>
                                 </tr>
                             </tfoot>
                         </table>
@@ -281,7 +308,9 @@ export default function Kennzahlen() {
                             <tfoot>
                                 <tr className="bg-red-50 font-bold border-t-2 border-red-200">
                                     <td className="py-3 px-2 text-lg">Summe Passiva</td>
-                                    <td className="py-3 px-2 text-right text-lg">{sumPassiva.toLocaleString('de-DE')}</td>
+                                    <td className="py-3 px-2 text-right text-lg">
+                                        {sumPassiva.toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                    </td>
                                 </tr>
                             </tfoot>
                         </table>
@@ -290,9 +319,10 @@ export default function Kennzahlen() {
             </div>
 
             {/* GuV Sektion */}
-            <div className="bg-white shadow-md rounded-lg overflow-hidden border border-gray-200">
-                <div className="bg-gray-100 px-6 py-4 border-b border-gray-200">
+            <div className="bg-white shadow-md rounded-lg border border-gray-200">
+                <div className="bg-gray-100 px-6 py-4 border-b border-gray-200 flex justify-between items-center rounded-t-lg">
                     <h2 className="text-xl font-semibold">GuV Rechnung in TEUR</h2>
+                    <span className="text-sm font-medium text-gray-600 bg-gray-200 px-3 py-1 rounded-full">Steuersatz = 30%</span>
                 </div>
                 
                 <div className="grid grid-cols-1 lg:grid-cols-2 divide-y lg:divide-y-0 lg:divide-x divide-gray-200">
@@ -329,11 +359,11 @@ export default function Kennzahlen() {
             </div>
 
             {/* Kennzahlen Sektion */}
-            <div className="bg-white shadow-md rounded-lg overflow-hidden border border-gray-200">
-                <div className="bg-gray-100 px-6 py-4 border-b border-gray-200 flex justify-between items-center">
+            <div className="bg-white shadow-md rounded-lg border border-gray-200">
+                <div className="bg-gray-100 px-6 py-4 border-b border-gray-200 flex justify-between items-center rounded-t-lg">
                     <div>
                         <h2 className="text-xl font-semibold">Kennzahlen (Eingabe)</h2>
-                        <p className="text-sm text-gray-500 mt-1">Gib die Ergebnisse gerundet auf zwei Nachkommastellen an.</p>
+                        <p className="text-sm text-gray-500 mt-1">Bitte gib die Ergebnisse mit zwei Nachkommastellen an (z. B. 12,34).</p>
                     </div>
                     <div className="flex gap-4">
                         <button 
@@ -363,19 +393,19 @@ export default function Kennzahlen() {
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-gray-100">
-                            <InputRow label="Verschuldungsgrad" inputKey="verschuldungsgrad" />
-                            <InputRow label="Fremdkapitalquote" inputKey="fremdkapitalquote" />
-                            <InputRow label="Eigenkapitalquote" inputKey="eigenkapitalquote" />
-                            <InputRow label="Anlagendeckungsgrad I" inputKey="anlagendeckungsgrad1" />
-                            <InputRow label="Anlagendeckungsgrad II" inputKey="anlagendeckungsgrad2" />
-                            <InputRow label="Liquidität 1. Grades" inputKey="liquiditaet1" />
-                            <InputRow label="Liquidität 2. Grades" inputKey="liquiditaet2" />
-                            <InputRow label="Liquidität 3. Grades" inputKey="liquiditaet3" />
-                            <InputRow label="EBIT" inputKey="ebit" suffix="TEUR" />
-                            <InputRow label="Eigenkapitalrentabilität (vor Steuern)" inputKey="ekRentVorSteuer" />
-                            <InputRow label="Eigenkapitalrentabilität (nach Steuern)" inputKey="ekRentNachSteuer" />
-                            <InputRow label="Umsatzrentabilität (nach Steuern)" inputKey="umsatzRent" />
-                            <InputRow label="Gesamtkapitalrentabilität (nach Steuern)" inputKey="gesamtkapRent" />
+                            <InputRow label="Verschuldungsgrad" inputKey="verschuldungsgrad" inputs={inputs} feedback={feedback} handleInputChange={handleInputChange} />
+                            <InputRow label="Fremdkapitalquote" inputKey="fremdkapitalquote" inputs={inputs} feedback={feedback} handleInputChange={handleInputChange} />
+                            <InputRow label="Eigenkapitalquote" inputKey="eigenkapitalquote" inputs={inputs} feedback={feedback} handleInputChange={handleInputChange} />
+                            <InputRow label="Anlagendeckungsgrad I" inputKey="anlagendeckungsgrad1" inputs={inputs} feedback={feedback} handleInputChange={handleInputChange} />
+                            <InputRow label="Anlagendeckungsgrad II" inputKey="anlagendeckungsgrad2" inputs={inputs} feedback={feedback} handleInputChange={handleInputChange} />
+                            <InputRow label="Liquidität 1. Grades" inputKey="liquiditaet1" inputs={inputs} feedback={feedback} handleInputChange={handleInputChange} />
+                            <InputRow label="Liquidität 2. Grades" inputKey="liquiditaet2" inputs={inputs} feedback={feedback} handleInputChange={handleInputChange} />
+                            <InputRow label="Liquidität 3. Grades" inputKey="liquiditaet3" inputs={inputs} feedback={feedback} handleInputChange={handleInputChange} />
+                            <InputRow label="EBIT" inputKey="ebit" inputs={inputs} feedback={feedback} handleInputChange={handleInputChange} suffix="TEUR" />
+                            <InputRow label="Eigenkapitalrentabilität (vor Steuern)" inputKey="ekRentVorSteuer" inputs={inputs} feedback={feedback} handleInputChange={handleInputChange} />
+                            <InputRow label="Eigenkapitalrentabilität (nach Steuern)" inputKey="ekRentNachSteuer" inputs={inputs} feedback={feedback} handleInputChange={handleInputChange} />
+                            <InputRow label="Umsatzrentabilität (nach Steuern)" inputKey="umsatzRent" inputs={inputs} feedback={feedback} handleInputChange={handleInputChange} />
+                            <InputRow label="Gesamtkapitalrentabilität (nach Steuern)" inputKey="gesamtkapRent" inputs={inputs} feedback={feedback} handleInputChange={handleInputChange} />
                         </tbody>
                     </table>
                 </div>
