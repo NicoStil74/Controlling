@@ -1,11 +1,25 @@
 'use client'
 
 import Link from 'next/link'
-import { useState } from 'react'
+import { useState, useEffect } from 'react'
+
+interface DataRow{
+    type: string,
+    name: string,
+    amount: number,
+}
+
 
 export default function Kennzahlen() {
+
+    const [balance, setBalance] = useState<DataRow[]>([])
+    const [guv, setGuV] = useState<DataRow[]>([])
+    const [figures, setFigures] = useState<any>({})
+    const [showSolutions, setShowSolutions] = useState(false)
+    const [feedback, setFeedback] = useState<Record<string, 'correct' | 'wrong' | 'neutral'>>({})
+
     // State für die Kennzahlen-Eingabefelder
-    const [inputs, setInputs] = useState({
+    const [inputs, setInputs] = useState<Record<string, string>>({
         verschuldungsgrad: '',
         fremdkapitalquote: '',
         eigenkapitalquote: '',
@@ -21,29 +35,145 @@ export default function Kennzahlen() {
         gesamtkapRent: ''
     });
 
+    const [previousInputs, setPreviousInputs] = useState<Record<string, string>>({});
+    const [loading, setLoading] = useState(true)
+
+    const fetchData = async () => {
+        setLoading(true)
+        setShowSolutions(false)
+        setFeedback({})
+        setInputs({
+            verschuldungsgrad: '',
+            fremdkapitalquote: '',
+            eigenkapitalquote: '',
+            anlagendeckungsgrad1: '',
+            anlagendeckungsgrad2: '',
+            liquiditaet1: '',
+            liquiditaet2: '',
+            liquiditaet3: '',
+            ebit: '',
+            ekRentVorSteuer: '',
+            ekRentNachSteuer: '',
+            umsatzRent: '',
+            gesamtkapRent: ''
+        })
+
+        try {
+            const response = await fetch('/api/kennzahlen')
+            const result = await response.json()
+            setBalance(result.balance)
+            setGuV(result.guv)
+            setFigures(result.figures)
+
+        } catch (error) {
+            console.error('Error fetching data:', error)
+            setBalance([])
+            setGuV([])
+            setFigures({})
+        } finally {
+            setLoading(false)
+        }
+    }
+    useEffect(() => {
+        fetchData()
+    }, [])
+
     const handleInputChange = (key: string, value: string) => {
-        // Nur Ziffern erlauben (Integer)
-        const cleanValue = value.replace(/\D/g, '');
+        // Nur Ziffern und Punkt/Komma erlauben (für Dezimalzahlen)
+        const cleanValue = value.replace(/[^0-9.,]/g, '');
         setInputs(prev => ({ ...prev, [key]: cleanValue }));
     };
 
-    const DataRow = ({ label }: { label: string }) => (
+    const parseGermanNumber = (val: string): number => {
+        let clean = val.replace(/\./g, '').replace(',', '.')
+        return parseFloat(clean) || 0
+    }
+
+    const mapping: Record<string, string> = {
+        verschuldungsgrad: 'Verschuldungsgrad',
+        fremdkapitalquote: 'Fremdkapitalquote',
+        eigenkapitalquote: 'Eigenkapitalquote',
+        anlagendeckungsgrad1: 'ADG_I',
+        anlagendeckungsgrad2: 'ADG_II',
+        liquiditaet1: 'LG_I',
+        liquiditaet2: 'LG_II',
+        liquiditaet3: 'LG_III',
+        ebit: 'EBIT',
+        ekRentVorSteuer: 'EKRvST',
+        ekRentNachSteuer: 'EKRnST',
+        umsatzRent: 'URnST',
+        gesamtkapRent: 'GKRvST'
+    }
+
+    const checkSolutions = () => {
+        const newFeedback: Record<string, 'correct' | 'wrong' | 'neutral'> = {}
+        
+        Object.keys(inputs).forEach(key => {
+            const userInput = inputs[key].trim()
+            if (userInput === '') {
+                newFeedback[key] = 'neutral'
+                return
+            }
+
+            const userValue = parseGermanNumber(userInput)
+            const correctValue = figures[mapping[key]]
+
+            // Toleranz für Rundungsdifferenzen (0.1)
+            const isCorrect = Math.abs(userValue - correctValue) < 0.1
+            newFeedback[key] = isCorrect ? 'correct' : 'wrong'
+        })
+
+        setFeedback(newFeedback)
+    }
+
+    const toggleSolutions = () => {
+        if (!showSolutions) {
+            setPreviousInputs(inputs)
+            const solvedInputs: Record<string, string> = {}
+            Object.keys(mapping).forEach(key => {
+                solvedInputs[key] = figures[mapping[key]]?.toString().replace('.', ',') || ''
+            })
+            setInputs(solvedInputs)
+        } else {
+            setInputs(previousInputs)
+        }
+        setShowSolutions(!showSolutions)
+    }
+
+    const DataRow = ({ label, amount }: { label: string, amount?: number }) => (
         <tr className="divide-x divide-gray-100">
             <td className="py-2 px-2 whitespace-nowrap text-sm">{label}</td>
-            <td className="py-2 px-2 text-right font-mono text-sm">-</td>
+            <td className="py-2 px-2 text-right font-mono text-sm">
+                {amount !== undefined ? amount.toLocaleString('de-DE') : '-'}
+            </td>
         </tr>
     );
 
-    const InputRow = ({ label, value, onChange, suffix = "%" }: { label: string, value: string, onChange: (v: string) => void, suffix?: string }) => (
-        <tr className="divide-x divide-gray-100 hover:bg-gray-50 transition-colors">
+    const sumAktiva = balance
+        .filter(item => item.type === 'Anlagevermögen' || item.type === 'Umlaufvermögen')
+        .reduce((sum, item) => sum + item.amount, 0);
+
+    const sumPassiva = balance
+        .filter(item => item.type === 'Eigenkapital' || item.type === 'Fremdkapital')
+        .reduce((sum, item) => sum + item.amount, 0);
+
+    const InputRow = ({ label, inputKey, suffix = "%" }: { label: string, inputKey: string, suffix?: string }) => (
+        <tr className={`divide-x divide-gray-100 hover:bg-gray-50 transition-colors ${
+            feedback[inputKey] === 'correct' ? 'bg-green-50' : 
+            feedback[inputKey] === 'wrong' ? 'bg-red-50' : ''
+        }`}>
             <td className="py-2 px-2 text-sm">{label}</td>
             <td className="py-1 px-2 text-right relative">
                 <input 
                     type="text" 
-                    value={value}
-                    onChange={(e) => onChange(e.target.value)}
-                    placeholder="0"
-                    className="w-full text-right p-1 pr-8 border rounded focus:ring-1 focus:ring-blue-500 outline-none text-sm font-mono"
+                    value={inputs[inputKey]}
+                    onChange={(e) => handleInputChange(inputKey, e.target.value)}
+                    placeholder="0,00"
+                    className={`w-full text-right p-1 pr-8 border rounded focus:ring-1 outline-none text-sm font-mono ${
+                        feedback[inputKey] === 'correct' ? 'border-green-500 focus:ring-green-500' : 
+                        feedback[inputKey] === 'wrong' ? 'border-red-500 focus:ring-red-500' : 
+                        'border-gray-200 focus:ring-blue-500'
+                    }`}
                 />
                 <span className="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-gray-400 font-mono">{suffix}</span>
             </td>
@@ -52,9 +182,42 @@ export default function Kennzahlen() {
 
     return (
         <main className="p-8 max-w-6xl mx-auto space-y-12">
-            <div className="flex justify-between items-center mb-6">
-                <h1 className="text-2xl font-bold">Kennzahlen</h1>
-                <Link href="/" className="text-blue-600 hover:underline">← Zurück zur Übersicht</Link>
+            <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mb-12">
+                <div className="space-y-4">
+                    <h1 className="text-4xl font-extrabold tracking-tight text-zinc-900">
+                        Kennzahlen
+                    </h1>
+                    <p className="text-zinc-500 text-lg max-w-2xl">
+                        Analyse der Bilanz und GuV zur Berechnung betriebswirtschaftlicher Kennzahlen.
+                    </p>
+                </div>
+                <div className="flex itemsB-center gap-4">
+                    <button
+                        onClick={fetchData}
+                        disabled={loading}
+                        className="flex items-center gap-2 px-6 py-3 bg-white border-2 border-zinc-100 rounded-2xl font-bold text-zinc-700 hover:bg-zinc-50 transition-all shadow-sm active:scale-95 disabled:opacity-50"
+                    >
+                        <svg
+                            xmlns="http://www.w3.org/2000/svg"
+                            width="20"
+                            height="20"
+                            viewBox="0 0 24 24"
+                            fill="none"
+                            stroke="currentColor"
+                            strokeWidth="2"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            className={loading ? 'animate-spin' : ''}
+                        >
+                            <path d="M3 12a9 9 0 0 1 9-9 9.75 9.75 0 0 1 6.74 2.74L21 8"></path>
+                            <path d="M21 3v5h-5"></path>
+                            <path d="M21 12a9 9 0 0 1-9 9 9.75 9.75 0 0 1-6.74-2.74L3 16"></path>
+                            <path d="M3 21v-5h5"></path>
+                        </svg>
+                        Neue Daten
+                    </button>
+                    <Link href="/" className="text-blue-600 hover:underline">← Zurück zur Übersicht</Link>
+                </div>
             </div>
             
             {/* Bilanz Sektion */}
@@ -76,19 +239,20 @@ export default function Kennzahlen() {
                             </thead>
                             <tbody className="divide-y divide-gray-100">
                                 <tr className="bg-gray-50"><td colSpan={2} className="py-1 px-2 font-bold text-xs uppercase text-gray-500">Anlagevermögen</td></tr>
-                                <DataRow label="Grundstücke u. Gebäude" />
-                                <DataRow label="Fuhrpark" />
-                                <DataRow label="Betriebs- u. Geschäftsausstattung" />
-                                <tr className="bg-gray-50"><td colSpan={2} className="py-1 px-2 font-bold text-xs uppercase text-gray-500">Umlaufvermögen</td></tr>
-                                <DataRow label="Warenbestände" />
-                                <DataRow label="Forderungen aus LuL" />
-                                <DataRow label="Wertpapiere (nicht betriebsn.)" />
-                                <DataRow label="Bank" />
+                                {balance.filter(item => item.type === 'Anlagevermögen').map((row, i)=>(
+                                    <DataRow key={i} label={row.name} amount={row.amount} />
+                                ))}
+                                <tr className="bg-gray-50">
+                                    <td colSpan={2} className="py-1 px-2 font-bold text-xs uppercase text-gray-500">Umlaufvermögen</td>
+                                </tr>
+                                {balance.filter(item => item.type === 'Umlaufvermögen').map((row, i)=>(
+                                    <DataRow key={i} label={row.name} amount={row.amount} />
+                                ))}
                             </tbody>
                             <tfoot>
                                 <tr className="bg-blue-50 font-bold border-t-2 border-blue-200">
                                     <td className="py-3 px-2 text-lg">Summe Aktiva</td>
-                                    <td className="py-3 px-2 text-right text-lg">-</td>
+                                    <td className="py-3 px-2 text-right text-lg">{sumAktiva.toLocaleString('de-DE')}</td>
                                 </tr>
                             </tfoot>
                         </table>
@@ -106,19 +270,18 @@ export default function Kennzahlen() {
                             </thead>
                             <tbody className="divide-y divide-gray-100">
                                 <tr className="bg-gray-50"><td colSpan={2} className="py-1 px-2 font-bold text-xs uppercase text-gray-500">Eigenkapital</td></tr>
-                                <DataRow label="Gezeichnetes Kapital" />
-                                <DataRow label="Rücklagen" />
+                                {balance.filter(item => item.type === 'Eigenkapital').map((row, i)=>(
+                                    <DataRow key={i} label={row.name} amount={row.amount} />
+                                ))}
                                 <tr className="bg-gray-50"><td colSpan={2} className="py-1 px-2 font-bold text-xs uppercase text-gray-500">Fremdkapital</td></tr>
-                                <DataRow label="Steuerrückstellungen" />
-                                <DataRow label="lfr. Darlehen" />
-                                <DataRow label="kfr. Darlehen" />
-                                <DataRow label="Kundenanzahlungen" />
-                                <DataRow label="Verbindlichkeiten aus LuL" />
+                                {balance.filter(item => item.type === 'Fremdkapital').map((row, i)=>(
+                                    <DataRow key={i} label={row.name} amount={row.amount} />
+                                ))}
                             </tbody>
                             <tfoot>
                                 <tr className="bg-red-50 font-bold border-t-2 border-red-200">
                                     <td className="py-3 px-2 text-lg">Summe Passiva</td>
-                                    <td className="py-3 px-2 text-right text-lg">-</td>
+                                    <td className="py-3 px-2 text-right text-lg">{sumPassiva.toLocaleString('de-DE')}</td>
                                 </tr>
                             </tfoot>
                         </table>
@@ -138,16 +301,14 @@ export default function Kennzahlen() {
                         <h3 className="font-bold text-lg mb-3 border-b pb-2 text-orange-800">Aufwand</h3>
                         <table className="w-full text-left">
                             <tbody className="divide-y divide-gray-100">
-                                <DataRow label="Bestandsveränderung" />
-                                <DataRow label="Personalaufwand" />
-                                <DataRow label="Warenaufwand" />
-                                <DataRow label="Versicherungen" />
-                                <DataRow label="Zinsaufwand" />
-                                <DataRow label="Abschreibungen" />
-                                <DataRow label="sonst. betriebl. Aufwand" />
+                                {guv.filter(item => item.type === 'Aufwand').map((row, i)=>(
+                                    <DataRow key={i} label={row.name} amount={row.amount} />
+                                ))}
                                 <tr className="bg-orange-50 font-bold border-t-2 border-orange-200">
                                     <td className="py-2 px-2 text-sm">Gewinn vor Steuer</td>
-                                    <td className="py-2 px-2 text-right text-sm">-</td>
+                                    <td className="py-2 px-2 text-right text-sm">
+                                        {guv.find(item => item.name === 'Gewinn vor Steuer')?.amount.toLocaleString('de-DE')}
+                                    </td>
                                 </tr>
                             </tbody>
                         </table>
@@ -158,8 +319,9 @@ export default function Kennzahlen() {
                         <h3 className="font-bold text-lg mb-3 border-b pb-2 text-green-800">Ertrag</h3>
                         <table className="w-full text-left">
                             <tbody className="divide-y divide-gray-100">
-                                <DataRow label="Umsatzerlöse" />
-                                <DataRow label="Zinsertrag" />
+                                {guv.filter(item => item.type === 'Ertrag').map((row, i)=>(
+                                    <DataRow key={i} label={row.name} amount={row.amount} />
+                                ))}
                             </tbody>
                         </table>
                     </div>
@@ -168,8 +330,29 @@ export default function Kennzahlen() {
 
             {/* Kennzahlen Sektion */}
             <div className="bg-white shadow-md rounded-lg overflow-hidden border border-gray-200">
-                <div className="bg-gray-100 px-6 py-4 border-b border-gray-200">
-                    <h2 className="text-xl font-semibold">Kennzahlen (Eingabe)</h2>
+                <div className="bg-gray-100 px-6 py-4 border-b border-gray-200 flex justify-between items-center">
+                    <div>
+                        <h2 className="text-xl font-semibold">Kennzahlen (Eingabe)</h2>
+                        <p className="text-sm text-gray-500 mt-1">Gib die Ergebnisse gerundet auf zwei Nachkommastellen an.</p>
+                    </div>
+                    <div className="flex gap-4">
+                        <button 
+                            onClick={toggleSolutions}
+                            className={`px-6 py-3 rounded-2xl font-bold transition-all shadow-sm active:scale-95 ${
+                                showSolutions 
+                                    ? 'bg-zinc-800 text-white hover:bg-zinc-700' 
+                                    : 'bg-zinc-100 text-zinc-900 hover:bg-zinc-200'
+                            }`}
+                        >
+                            {showSolutions ? 'Lösungen ausblenden' : 'Lösungen anzeigen'}
+                        </button>
+                        <button 
+                            onClick={checkSolutions}
+                            className="px-6 py-3 bg-zinc-900 text-white rounded-2xl font-bold hover:bg-zinc-800 transition-colors shadow-lg active:scale-95"
+                        >
+                            Ergebnisse prüfen
+                        </button>
+                    </div>
                 </div>
                 <div className="p-4 overflow-x-auto">
                     <table className="w-full text-left border-collapse">
@@ -180,19 +363,19 @@ export default function Kennzahlen() {
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-gray-100">
-                            <InputRow label="Verschuldungsgrad" value={inputs.verschuldungsgrad} onChange={(v) => handleInputChange('verschuldungsgrad', v)} />
-                            <InputRow label="Fremdkapitalquote" value={inputs.fremdkapitalquote} onChange={(v) => handleInputChange('fremdkapitalquote', v)} />
-                            <InputRow label="Eigenkapitalquote" value={inputs.eigenkapitalquote} onChange={(v) => handleInputChange('eigenkapitalquote', v)} />
-                            <InputRow label="Anlagendeckungsgrad I" value={inputs.anlagendeckungsgrad1} onChange={(v) => handleInputChange('anlagendeckungsgrad1', v)} />
-                            <InputRow label="Anlagendeckungsgrad II" value={inputs.anlagendeckungsgrad2} onChange={(v) => handleInputChange('anlagendeckungsgrad2', v)} />
-                            <InputRow label="Liquidität 1. Grades" value={inputs.liquiditaet1} onChange={(v) => handleInputChange('liquiditaet1', v)} />
-                            <InputRow label="Liquidität 2. Grades" value={inputs.liquiditaet2} onChange={(v) => handleInputChange('liquiditaet2', v)} />
-                            <InputRow label="Liquidität 3. Grades" value={inputs.liquiditaet3} onChange={(v) => handleInputChange('liquiditaet3', v)} />
-                            <InputRow label="EBIT" value={inputs.ebit} onChange={(v) => handleInputChange('ebit', v)} suffix="TEUR" />
-                            <InputRow label="Eigenkapitalrentabilität (vor Steuern)" value={inputs.ekRentVorSteuer} onChange={(v) => handleInputChange('ekRentVorSteuer', v)} />
-                            <InputRow label="Eigenkapitalrentabilität (nach Steuern)" value={inputs.ekRentNachSteuer} onChange={(v) => handleInputChange('ekRentNachSteuer', v)} />
-                            <InputRow label="Umsatzrentabilität (nach Steuern)" value={inputs.umsatzRent} onChange={(v) => handleInputChange('umsatzRent', v)} />
-                            <InputRow label="Gesamtkapitalrentabilität (nach Steuern)" value={inputs.gesamtkapRent} onChange={(v) => handleInputChange('gesamtkapRent', v)} />
+                            <InputRow label="Verschuldungsgrad" inputKey="verschuldungsgrad" />
+                            <InputRow label="Fremdkapitalquote" inputKey="fremdkapitalquote" />
+                            <InputRow label="Eigenkapitalquote" inputKey="eigenkapitalquote" />
+                            <InputRow label="Anlagendeckungsgrad I" inputKey="anlagendeckungsgrad1" />
+                            <InputRow label="Anlagendeckungsgrad II" inputKey="anlagendeckungsgrad2" />
+                            <InputRow label="Liquidität 1. Grades" inputKey="liquiditaet1" />
+                            <InputRow label="Liquidität 2. Grades" inputKey="liquiditaet2" />
+                            <InputRow label="Liquidität 3. Grades" inputKey="liquiditaet3" />
+                            <InputRow label="EBIT" inputKey="ebit" suffix="TEUR" />
+                            <InputRow label="Eigenkapitalrentabilität (vor Steuern)" inputKey="ekRentVorSteuer" />
+                            <InputRow label="Eigenkapitalrentabilität (nach Steuern)" inputKey="ekRentNachSteuer" />
+                            <InputRow label="Umsatzrentabilität (nach Steuern)" inputKey="umsatzRent" />
+                            <InputRow label="Gesamtkapitalrentabilität (nach Steuern)" inputKey="gesamtkapRent" />
                         </tbody>
                     </table>
                 </div>
