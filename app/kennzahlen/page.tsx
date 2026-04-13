@@ -35,7 +35,7 @@ const InputRow = ({ label, inputKey, inputs, feedback, handleInputChange, suffix
         <td className="py-1 px-2 text-right relative">
             <input 
                 type="text" 
-                value={inputs[inputKey]}
+                value={inputs[inputKey] || ''}
                 onChange={(e) => handleInputChange(inputKey, e.target.value)}
                 placeholder="0,00"
                 className={`w-full text-right p-1.5 pr-8 border-2 rounded-lg focus:ring-2 outline-none text-sm font-mono transition-all ${
@@ -108,10 +108,11 @@ export default function Kennzahlen() {
 
         try {
             const response = await fetch('/api/kennzahlen')
+            if (!response.ok) throw new Error('API request failed')
             const result = await response.json()
-            setBalance(result.balance)
-            setGuV(result.guv)
-            setFigures(result.figures)
+            setBalance(result.balance || [])
+            setGuV(result.guv || [])
+            setFigures(result.figures || {})
 
         } catch (error) {
             console.error('Error fetching data:', error)
@@ -188,11 +189,13 @@ export default function Kennzahlen() {
         setShowSolutions(!showSolutions)
     }
 
-    const sumAktiva = balance
-        .filter(item => item.type === 'Anlagevermögen' || item.type === 'Umlaufvermögen')
-        .reduce((sum, item) => sum + item.amount, 0);
+    const sumAktiva = (balance || [])
+        .filter(item => item?.type === 'Anlagevermögen' || item?.type === 'Umlaufvermögen')
+        .reduce((sum, item) => sum + (item?.amount || 0), 0);
 
-    const sumPassiva = sumAktiva
+    const sumPassiva = (balance || [])
+        .filter(item => item?.type === 'Eigenkapital' || item?.type === 'Fremdkapital')
+        .reduce((sum, item) => sum + (item?.amount || 0), 0);
 
     return (
         <main className="p-8 max-w-6xl mx-auto space-y-12">
@@ -264,13 +267,13 @@ export default function Kennzahlen() {
                             </thead>
                             <tbody className="divide-y divide-gray-100">
                                 <tr className="bg-gray-50"><td colSpan={2} className="py-1 px-2 font-bold text-xs uppercase text-gray-500">Anlagevermögen</td></tr>
-                                {balance.filter(item => item.type === 'Anlagevermögen').map((row, i)=>(
+                                {(balance || []).filter(item => item?.type === 'Anlagevermögen').map((row, i)=>(
                                     <DataRow key={i} label={row.name} amount={row.amount} />
                                 ))}
                                 <tr className="bg-gray-50">
                                     <td colSpan={2} className="py-1 px-2 font-bold text-xs uppercase text-gray-500">Umlaufvermögen</td>
                                 </tr>
-                                {balance.filter(item => item.type === 'Umlaufvermögen').map((row, i)=>(
+                                {(balance || []).filter(item => item?.type === 'Umlaufvermögen').map((row, i)=>(
                                     <DataRow key={i} label={row.name} amount={row.amount} />
                                 ))}
                             </tbody>
@@ -297,11 +300,11 @@ export default function Kennzahlen() {
                             </thead>
                             <tbody className="divide-y divide-gray-100">
                                 <tr className="bg-gray-50"><td colSpan={2} className="py-1 px-2 font-bold text-xs uppercase text-gray-500">Eigenkapital</td></tr>
-                                {balance.filter(item => item.type === 'Eigenkapital').map((row, i)=>(
+                                {(balance || []).filter(item => item?.type === 'Eigenkapital').map((row, i)=>(
                                     <DataRow key={i} label={row.name} amount={row.amount} />
                                 ))}
                                 <tr className="bg-gray-50"><td colSpan={2} className="py-1 px-2 font-bold text-xs uppercase text-gray-500">Fremdkapital</td></tr>
-                                {balance.filter(item => item.type === 'Fremdkapital').map((row, i)=>(
+                                {(balance || []).filter(item => item?.type === 'Fremdkapital').map((row, i)=>(
                                     <DataRow key={i} label={row.name} amount={row.amount} />
                                 ))}
                             </tbody>
@@ -331,13 +334,13 @@ export default function Kennzahlen() {
                         <h3 className="font-bold text-lg mb-3 border-b pb-2 text-orange-800">Aufwand</h3>
                         <table className="w-full text-left">
                             <tbody className="divide-y divide-gray-100">
-                                {guv.filter(item => item.type === 'Aufwand').map((row, i)=>(
+                                {(guv || []).filter(item => item?.type === 'Aufwand').map((row, i)=>(
                                     <DataRow key={i} label={row.name} amount={row.amount} />
                                 ))}
                                 <tr className="bg-orange-50 font-bold border-t-2 border-orange-200">
                                     <td className="py-2 px-2 text-sm">Gewinn vor Steuer</td>
                                     <td className="py-2 px-2 text-right text-sm">
-                                        {guv.find(item => item.name === 'Gewinn vor Steuer')?.amount?.toLocaleString('de-DE')}
+                                        {(guv || []).find(item => item?.name === 'Gewinn vor Steuer')?.amount?.toLocaleString('de-DE')}
                                     </td>
                                 </tr>
                             </tbody>
@@ -349,7 +352,7 @@ export default function Kennzahlen() {
                         <h3 className="font-bold text-lg mb-3 border-b pb-2 text-green-800">Ertrag</h3>
                         <table className="w-full text-left">
                             <tbody className="divide-y divide-gray-100">
-                                {guv.filter(item => item.type === 'Ertrag').map((row, i)=>(
+                                {(guv || []).filter(item => item?.type === 'Ertrag').map((row, i)=>(
                                     <DataRow key={i} label={row.name} amount={row.amount} />
                                 ))}
                             </tbody>

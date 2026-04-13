@@ -15,11 +15,13 @@ app.add_middleware(
 
 materialkosten_service = MaterialCostService()
 kennzahlen_service = KennzahlenService()
+@app.get("/api/materialkosten")
 @app.get("/materialkosten")
 async def get_materialkosten():
     # Returns both table_data (formatted strings) and solutions (raw numbers)
     return materialkosten_service.get_full_package()
 
+@app.get("/api/kennzahlen")
 @app.get("/kennzahlen")
 async def get_kennzahlen():
     return kennzahlen_service.get_package()
