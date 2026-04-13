@@ -128,7 +128,10 @@ export default function Kennzahlen() {
 
             try {
                 const response = await fetch('/api/kennzahlen')
-                if (!response.ok) throw new Error('API request failed')
+                if (!response.ok) {
+                    console.error('API ERROR STATUS:', response.status)
+                    throw new Error(`API request failed: ${response.status}`)
+                }
                 const result = await response.json()
                 setBalance(result.balance || [])
                 setGuV(result.guv || [])
@@ -159,7 +162,10 @@ export default function Kennzahlen() {
 
             try {
                 const response = await fetch('/api/kennzahlen2')
-                if (!response.ok) throw new Error('API request failed')
+                if (!response.ok) {
+                    console.error('API ERROR STATUS:', response.status)
+                    throw new Error(`API request failed: ${response.status}`)
+                }
                 const result = await response.json()
                 setData2(result.data || {})
                 setSolutions2(result.solutions || {})
