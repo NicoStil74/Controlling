@@ -88,6 +88,8 @@ export default function Kennzahlen() {
     const [activeType, setActiveType] = useState('standard')
     const [data2, setData2] = useState<any>(null)
     const [solutions2, setSolutions2] = useState<any>(null)
+    const [data3, setData3] = useState<any>(null)
+    const [solutions3, setSolutions3] = useState<any>(null)
     const [roundToInteger, setRoundToInteger] = useState(false)
 
     const modes = [
@@ -177,6 +179,33 @@ export default function Kennzahlen() {
             } finally {
                 setLoading(false)
             }
+        } else if (activeType === 'kennzahlen3') {
+            setInputs({
+                opat: '',
+                nopat: '',
+                nopat_roce: '',
+                wacc: '',
+                kapitalkosten: '',
+                eva: ''
+            })
+
+            try {
+                const response = await fetch('/api/kennzahlen3')
+                if (!response.ok) {
+                    console.error('API ERROR STATUS:', response.status)
+                    throw new Error(`API request failed: ${response.status}`)
+                }
+                const result = await response.json()
+                setData3(result.data || {})
+                setSolutions3(result.solutions || {})
+
+            } catch (error) {
+                console.error('Error fetching data:', error)
+                setData3(null)
+                setSolutions3(null)
+            } finally {
+                setLoading(false)
+            }
         } else {
             setLoading(false)
         }
@@ -187,7 +216,7 @@ export default function Kennzahlen() {
 
     const handleInputChange = (key: string, value: string) => {
         // Nur Ziffern und Punkt/Komma erlauben (für Dezimalzahlen)
-        const cleanValue = value.replace(/[^0-9.,]/g, '');
+        const cleanValue = value.replace(/[^0-9.,-]/g, '');
         setInputs(prev => ({ ...prev, [key]: cleanValue }));
     };
 
@@ -226,10 +255,19 @@ export default function Kennzahlen() {
         eva: 'eva'
     }
 
+    const mapping3: Record<string, string> = {
+        opat: 'opat',
+        nopat: 'nopat',
+        nopat_roce: 'nopat_roce',
+        wacc: 'wacc',
+        kapitalkosten: 'kapitalkosten',
+        eva: 'eva'
+    }
+
     const checkSolutions = () => {
         const newFeedback: Record<string, 'correct' | 'wrong' | 'neutral'> = {}
-        const currentMapping = activeType === 'kennzahlen2' ? mapping2 : mapping;
-        const currentFigures = activeType === 'kennzahlen2' ? solutions2 : figures;
+        const currentMapping = activeType === 'kennzahlen3' ? mapping3 : (activeType === 'kennzahlen2' ? mapping2 : mapping);
+        const currentFigures = activeType === 'kennzahlen3' ? solutions3 : (activeType === 'kennzahlen2' ? solutions2 : figures);
 
         if (!currentFigures || !currentMapping) return;
 
@@ -243,8 +281,19 @@ export default function Kennzahlen() {
             const userValue = parseGermanNumber(userInput)
             let correctValue = (currentFigures as any)[(currentMapping as any)[key]]
 
-            if (roundToInteger && activeType === 'kennzahlen2') {
+            if (roundToInteger && (activeType === 'kennzahlen2' || activeType === 'kennzahlen3')) {
                 correctValue = Math.round(correctValue)
+            }
+
+            // Spezialfall für ROCE/WACC (wenn sie als 0.xxxx statt x.xx kommen)
+            if ((key === 'nopat_roce' || key === 'wacc') && activeType === 'kennzahlen3') {
+                // Wenn User z.B. 12,34 eingibt, aber der Wert 0.1234 ist, dann multiplizieren wir User mit 100?
+                // Normalerweise geben User Kennzahlen in % an.
+                // Wir checken ob der User-Wert im Bereich des 100-fachen liegt.
+                if (Math.abs(userValue - correctValue * 100) < 0.5) {
+                    newFeedback[key] = 'correct'
+                    return
+                }
             }
 
             // Toleranz für Rundungsdifferenzen (0.1 oder 0.5 bei Ganzzahlen)
@@ -257,8 +306,8 @@ export default function Kennzahlen() {
     }
 
     const toggleSolutions = () => {
-        const currentMapping = activeType === 'kennzahlen2' ? mapping2 : mapping;
-        const currentFigures = activeType === 'kennzahlen2' ? solutions2 : figures;
+        const currentMapping = activeType === 'kennzahlen3' ? mapping3 : (activeType === 'kennzahlen2' ? mapping2 : mapping);
+        const currentFigures = activeType === 'kennzahlen3' ? solutions3 : (activeType === 'kennzahlen2' ? solutions2 : figures);
 
         if (!currentFigures || !currentMapping) return;
 
@@ -267,7 +316,13 @@ export default function Kennzahlen() {
             const solvedInputs: Record<string, string> = {}
             Object.keys(currentMapping).forEach(key => {
                 let val = (currentFigures as any)[(currentMapping as any)[key]]
-                if (roundToInteger && activeType === 'kennzahlen2') {
+                
+                // Für Kennzahlen 3 ROCE/WACC in % anzeigen
+                if (activeType === 'kennzahlen3' && (key === 'nopat_roce' || key === 'wacc')) {
+                    val = val * 100
+                }
+
+                if (roundToInteger && (activeType === 'kennzahlen2' || activeType === 'kennzahlen3')) {
                     val = Math.round(val)
                 }
                 solvedInputs[key] = formatNumber(val)
@@ -636,6 +691,103 @@ export default function Kennzahlen() {
                                     <InputRow label="Free Cash Flow (FCF)" inputKey="fcf" inputs={inputs} feedback={feedback} handleInputChange={handleInputChange} suffix="€" />
                                     <InputRow label="WACC" inputKey="wacc" inputs={inputs} feedback={feedback} handleInputChange={handleInputChange} />
                                     <InputRow label="Kapitalkosten" inputKey="kapitalkosten" inputs={inputs} feedback={feedback} handleInputChange={handleInputChange} suffix="€" />
+                                    <InputRow label="Economic Value Added (EVA)" inputKey="eva" inputs={inputs} feedback={feedback} handleInputChange={handleInputChange} suffix="€" />
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            ) : activeType === 'kennzahlen3' ? (
+                <div className="space-y-12">
+                    {/* Daten Sektion */}
+                    <div className="bg-white shadow-md rounded-lg border border-gray-200">
+                        <div className="bg-gray-100 px-6 py-4 border-b border-gray-200 flex justify-between items-center rounded-t-lg">
+                            <h2 className="text-xl font-semibold">Unternehmensdaten (Analyse III)</h2>
+                            <label className="flex items-center gap-3 cursor-pointer group">
+                                <span className="text-sm font-bold text-zinc-600 group-hover:text-zinc-900 transition-colors">Nachkommastellen ausblenden</span>
+                                <div className="relative">
+                                    <input 
+                                        type="checkbox" 
+                                        className="sr-only peer" 
+                                        checked={roundToInteger}
+                                        onChange={() => setRoundToInteger(!roundToInteger)}
+                                    />
+                                    <div className="w-11 h-6 bg-zinc-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                                </div>
+                            </label>
+                        </div>
+                        <div className="p-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                            <div className="space-y-1 border-t pt-4">
+                                <p className="text-xs font-bold uppercase text-gray-500">Eigenkapital (EK)</p>
+                                <p className="text-lg font-mono">{formatNumber(data3?.ek)} €</p>
+                            </div>
+                            <div className="space-y-1 border-t pt-4">
+                                <p className="text-xs font-bold uppercase text-gray-500">Fremdkapital (FK)</p>
+                                <p className="text-lg font-mono">{formatNumber(data3?.fk)} €</p>
+                            </div>
+                            <div className="space-y-1 border-t pt-4" >
+                                <p className="text-xs font-bold uppercase text-gray-500">Gesamtkapital (GK)</p>
+                                <p className="text-lg font-mono">{formatNumber(data3?.gk)} €</p>
+                            </div>
+                            <div className="space-y-1 border-t pt-4">
+                                <p className="text-xs font-bold uppercase text-gray-500">Fremdkapitalzinssatz</p>
+                                <p className="text-lg font-mono">{formatNumber(data3?.fk_zins * 100)} %</p>
+                            </div>
+                            <div className="space-y-1 border-t pt-4">
+                                <p className="text-xs font-bold uppercase text-gray-500">Gewinn vor Steuer (EBT)</p>
+                                <p className="text-lg font-mono">{formatNumber(data3?.ebt)} €</p>
+                            </div>
+                            <div className="space-y-1 border-t pt-4">
+                                <p className="text-xs font-bold uppercase text-gray-500">Steuersatz</p>
+                                <p className="text-lg font-mono">{formatNumber(data3?.steuersatz * 100)} %</p>
+                            </div>
+                            <div className="space-y-1 border-t pt-4">
+                                <p className="text-xs font-bold uppercase text-gray-500">EK-Kapitalkostensatz (nach Steuern)</p>
+                                <p className="text-lg font-mono">{formatNumber(data3?.ek_zins * 100)} %</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Kennzahlen Sektion */}
+                    <div className="bg-white shadow-md rounded-lg border border-gray-200">
+                        <div className="bg-gray-100 px-6 py-4 border-b border-gray-200 flex justify-between items-center rounded-t-lg">
+                            <div>
+                                <h2 className="text-xl font-semibold">Ergebnisse (Eingabe)</h2>
+                                <p className="text-sm text-gray-500 mt-1">Berechne OPAT, NOPAT, ROCE und EVA.</p>
+                            </div>
+                            <div className="flex gap-4">
+                                <button 
+                                    onClick={toggleSolutions}
+                                    className={`px-6 py-3 rounded-2xl font-bold transition-all shadow-sm active:scale-95 ${
+                                        showSolutions 
+                                            ? 'bg-zinc-800 text-white hover:bg-zinc-700' 
+                                            : 'bg-zinc-100 text-zinc-900 hover:bg-zinc-200'
+                                    }`}
+                                >
+                                    {showSolutions ? 'Lösungen ausblenden' : 'Lösungen anzeigen'}
+                                </button>
+                                <button 
+                                    onClick={checkSolutions}
+                                    className="px-6 py-3 bg-zinc-900 text-white rounded-2xl font-bold hover:bg-zinc-800 transition-colors shadow-lg active:scale-95"
+                                >
+                                    Ergebnisse prüfen
+                                </button>
+                            </div>
+                        </div>
+                        <div className="p-4 overflow-x-auto">
+                            <table className="w-full text-left border-collapse">
+                                <thead>
+                                    <tr className="text-xs text-gray-600 border-b bg-gray-50 uppercase tracking-wider">
+                                        <th className="py-2 px-2">Kennzahl</th>
+                                        <th className="py-2 px-2 text-right w-48">Eingabe</th>
+                                    </tr>
+                                </thead>
+                                <tbody className="divide-y divide-gray-100">
+                                    <InputRow label="Operating Profit After Tax (OPAT)" inputKey="opat" inputs={inputs} feedback={feedback} handleInputChange={handleInputChange} suffix="€" />
+                                    <InputRow label="Net Operating Profit After Tax (NOPAT)" inputKey="nopat" inputs={inputs} feedback={feedback} handleInputChange={handleInputChange} suffix="€" />
+                                    <InputRow label="ROCE (auf Basis NOPAT)" inputKey="nopat_roce" inputs={inputs} feedback={feedback} handleInputChange={handleInputChange} />
+                                    <InputRow label="WACC (nach Steuern)" inputKey="wacc" inputs={inputs} feedback={feedback} handleInputChange={handleInputChange} />
+                                    <InputRow label="Kapitalkosten (EK + FK)" inputKey="kapitalkosten" inputs={inputs} feedback={feedback} handleInputChange={handleInputChange} suffix="€" />
                                     <InputRow label="Economic Value Added (EVA)" inputKey="eva" inputs={inputs} feedback={feedback} handleInputChange={handleInputChange} suffix="€" />
                                 </tbody>
                             </table>

@@ -308,7 +308,7 @@ class KennzahlenService():
 
         # ===== KapitalKennzahlen ===== 
         gk = random.randint(100_000, 2_000_000)
-        ek = round(gk * random.uniform(0.15,0.6),2)
+        ek = round(gk * random.uniform(0.15, 0.6), 2)
         fk = gk - ek
         fk_zins = get_rand_fk_zins()
 
@@ -321,9 +321,9 @@ class KennzahlenService():
 
         ebt = ebit - zins 
 
-        return{
+        return {
             'ek': ek,
-            'gk': gk,
+            'fk': fk,
             'fk_zins': fk_zins,
             'ebt': ebt,
             'steuersatz': 0.25,
@@ -345,30 +345,31 @@ class KennzahlenService():
 
 
         # ===== Profit (Before / After Tax) =====         
-        opat = round(ebt * (1- steuersatz),2)
-        nopat = eat + round((fk * data['fk_zins']),2)
-        nopat_roce = round(nopat / (ek + fk),4)
+        opat = round(ebt * (1 - steuersatz),2)
+        nopat = eat + round((fk * data['fk_zins']), 2)
+        nopat_roce = round(nopat / (ek + fk), 4)
         
 
         # ===== Kapitalkosten ===== 
-        wacc = round((ek / gk) * data['ek_zins'] + (ek / gk) * data['fk_zins'],4)
+        wacc = round((ek / gk) * data['ek_zins'] + (fk / gk) * data['fk_zins'],4)
         total_capital_cost = round(ek * data['ek_zins'] + fk * data['fk_zins'],2)
         eva = round(nopat - total_capital_cost,2)
 
 
         return {
-                'opat': opat,
-                'nopat': nopat,
-                'nopat_roce': nopat_roce,
-                'wacc': wacc,
-                'kapitalkosten': total_capital_cost,
-                'eva': eva
+            'opat': opat,
+            'nopat': nopat,
+            'nopat_roce': nopat_roce,
+            'wacc': wacc,
+            'kapitalkosten': total_capital_cost,
+            'eva': eva
         }   
     
     @staticmethod
     def get_package3():
         
-        data = KennzahlenService.generate3(),
+        data = KennzahlenService.generate3()
+
         solutions = KennzahlenService.calculate_figures3(data)
 
         return {

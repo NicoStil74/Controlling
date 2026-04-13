@@ -31,6 +31,11 @@ async def get_kennzahlen():
 async def get_kennzahlen2():
     return kennzahlen_service.get_package2()
 
+@app.get("/api/kennzahlen3")
+@app.get("/kennzahlen3")
+async def get_kennzahlen3():
+    return kennzahlen_service.get_package3()
+
 @app.get("/")
 async def health_check():
     return {"Connected": True}
