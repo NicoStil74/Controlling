@@ -725,10 +725,6 @@ export default function Kennzahlen() {
                                 <p className="text-xs font-bold uppercase text-gray-500">Fremdkapital (FK)</p>
                                 <p className="text-lg font-mono">{formatNumber(data3?.fk)} €</p>
                             </div>
-                            <div className="space-y-1 border-t pt-4" >
-                                <p className="text-xs font-bold uppercase text-gray-500">Gesamtkapital (GK)</p>
-                                <p className="text-lg font-mono">{formatNumber(data3?.gk)} €</p>
-                            </div>
                             <div className="space-y-1 border-t pt-4">
                                 <p className="text-xs font-bold uppercase text-gray-500">Fremdkapitalzinssatz</p>
                                 <p className="text-lg font-mono">{formatNumber(data3?.fk_zins * 100)} %</p>
@@ -785,9 +781,9 @@ export default function Kennzahlen() {
                                 <tbody className="divide-y divide-gray-100">
                                     <InputRow label="Operating Profit After Tax (OPAT)" inputKey="opat" inputs={inputs} feedback={feedback} handleInputChange={handleInputChange} suffix="€" />
                                     <InputRow label="Net Operating Profit After Tax (NOPAT)" inputKey="nopat" inputs={inputs} feedback={feedback} handleInputChange={handleInputChange} suffix="€" />
-                                    <InputRow label="ROCE (auf Basis NOPAT)" inputKey="nopat_roce" inputs={inputs} feedback={feedback} handleInputChange={handleInputChange} />
-                                    <InputRow label="WACC (nach Steuern)" inputKey="wacc" inputs={inputs} feedback={feedback} handleInputChange={handleInputChange} />
-                                    <InputRow label="Kapitalkosten (EK + FK)" inputKey="kapitalkosten" inputs={inputs} feedback={feedback} handleInputChange={handleInputChange} suffix="€" />
+                                    <InputRow label="NOPAT in % von Kapital (ROCE)" inputKey="nopat_roce" inputs={inputs} feedback={feedback} handleInputChange={handleInputChange} />
+                                    <InputRow label="WACC" inputKey="wacc" inputs={inputs} feedback={feedback} handleInputChange={handleInputChange} />
+                                    <InputRow label="Gesamte Kapitalkosten" inputKey="kapitalkosten" inputs={inputs} feedback={feedback} handleInputChange={handleInputChange} suffix="€" />
                                     <InputRow label="Economic Value Added (EVA)" inputKey="eva" inputs={inputs} feedback={feedback} handleInputChange={handleInputChange} suffix="€" />
                                 </tbody>
                             </table>
