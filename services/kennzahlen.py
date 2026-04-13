@@ -165,7 +165,7 @@ class KennzahlenService():
         ebit = round(umsatz * ebit_marge, 2)
 
         # ===== Zinsen =====
-        fk_zins = random.uniform(0.03, 0.10)
+        fk_zins = round(random.uniform(0.03, 0.10),2)
         zins = round(fk * fk_zins, 2)
 
         # ===== Gewinn vor Steuer / EBT =====
@@ -188,19 +188,24 @@ class KennzahlenService():
         # Investitionen (Capex)
         capex = round(umsatz * random.uniform(0.05, 0.20), 2)
 
+        # ===== Kapitalkostensatz fr Eigenkapital =====
+        capital_cost_eq = round(random.uniform(0.1, 0.14), 2)
+
+
         return {
             'ek': ek,
             'fk': fk,
             'gk': gk,
+            'fk_zins': fk_zins,
             'umsatz': umsatz,
-            'zinsen': zins,
             'ebt': ebt,
             'steuer': round(ebt * steuersatz, 2),
             'net_income': net_income,
             'abschreibungen': abschreibungen,
             'pensionsrueckstellungen': pens_change,
             'working_capital': wc_change,
-            'investitionen': capex
+            'investitionen': capex,
+            'kapitalkosten_ek': capital_cost_eq
         }
 
     @staticmethod
@@ -209,22 +214,22 @@ class KennzahlenService():
         # Profitability
         # ======================
 
-        umsatzrendite = round(data['ebt'] / data['umsatz'], 4)
+        umsatzrendite = round((data['net_income'] / data['umsatz']) * 100, 2)
 
         ekr = round((data['net_income'] / data['ek']) * 100, 2)
-        gkr = round((data['net_income'] / data['gk']) * 100, 2)
+        gkr = round(((data['net_income'] + data['fk_zins'] * data['fk']) / data['gk']) * 100, 2)
 
         # ======================
         # EBITDA / EBIT / NOPAT
         # ======================
 
-        ebit = data['ebt'] + data['zinsen']
+        ebit = data['ebt'] + data['fk'] * data['fk_zins']
 
         ebitda = ebit + data['abschreibungen']
 
         tax_rate = data['steuer'] / data['ebt'] if data['ebt'] != 0 else 0
 
-        nopat = ebit * (1 - tax_rate)
+        nopat = ebit - (data['ebt'] * tax_rate)
 
         # ======================
         # Cash Flow
@@ -243,20 +248,17 @@ class KennzahlenService():
         # Capital / WACC / EVA
         # ======================
 
-        # WACC (vereinfachte Annahme)
-        cost_of_equity = 0.10
-        cost_of_debt = 0.06
 
         ek = data['ek']
         fk = data['fk']
         gk = data['gk']
 
-        wacc = (
-                (ek / gk) * cost_of_equity
-                + (fk / gk) * cost_of_debt * (1 - tax_rate)
+        wacc_val = (
+                (ek / gk) * data['kapitalkosten_ek']
+                + (fk / gk) * data['fk_zins']
         )
 
-        capital_charge = gk * wacc
+        capital_charge = (wacc_val) * gk
 
         eva = nopat - capital_charge
 
@@ -265,20 +267,20 @@ class KennzahlenService():
         # ======================
 
         return {
-            'umsatzrendite': round(umsatzrendite, 4),
+            'umsatzrendite': umsatzrendite,
             'ekr': ekr,
             'gkr': gkr,
 
-            'ebit': ebit,
-            'ebitda': ebitda,
-            'nopat': nopat,
+            'ebit': round(ebit, 2),
+            'ebitda': round(ebitda, 2),
+            'nopat': round(nopat, 2),
 
-            'ocf': ocf,
-            'fcf': fcf,
+            'ocf': round(ocf, 2),
+            'fcf': round(fcf, 2),
 
-            'wacc': round(wacc, 4),
-            'kapitalkosten': capital_charge,
-            'eva': eva
+            'wacc': round(wacc_val * 100, 2),
+            'kapitalkosten': round(capital_charge, 2),
+            'eva': round(eva, 2)
         }
 
     @staticmethod

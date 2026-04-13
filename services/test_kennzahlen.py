@@ -42,6 +42,22 @@ guv = [
     {"type": "Ergebnis", "name": "Gewinn vor Steuer", "amount": 114},
 ]
 
-figures = k.calculate_figures(data, guv)
 
-printj(figures)
+data2 = {
+    'ek': 150000,
+    'fk': 450000,
+    'gk': 600000,
+    'fk_zins': 0.08,
+    'umsatz': 1900000,
+    'ebt': 75000,
+    'steuer': 45000.0,
+    'net_income': 30000,
+    'abschreibungen': 20000,
+    'pensionsrueckstellungen': 5000,
+    'working_capital': -8000,
+    'investitionen': 30000,
+    'kapitalkosten_ek': 0.12
+}
+
+solution = KennzahlenService().calculate_figures2(data2)
+printj(solution)

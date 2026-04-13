@@ -26,6 +26,10 @@ async def get_materialkosten():
 async def get_kennzahlen():
     return kennzahlen_service.get_package1()
 
+@app.get("/kennzahlen2")
+async def get_kennzahlen2():
+    return kennzahlen_service.get_package2()
+
 @app.get("/")
 async def health_check():
     return {"Connected": True}

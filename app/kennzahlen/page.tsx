@@ -86,52 +86,89 @@ export default function Kennzahlen() {
     const [previousInputs, setPreviousInputs] = useState<Record<string, string>>({});
     const [loading, setLoading] = useState(true)
     const [activeType, setActiveType] = useState('standard')
+    const [data2, setData2] = useState<any>(null)
+    const [solutions2, setSolutions2] = useState<any>(null)
 
     const modes = [
-        { id: 'standard', label: 'Basis-Analyse', icon: '📊' },
-        { id: 'missing', label: 'Lücken-Bilanz', icon: '🔍' },
+        { id: 'standard', label: 'Kennzahlen I', icon: '' },
+        { id: 'kennzahlen2', label: 'Kennzahlen II', icon: '' },
+        { id: 'kennzahlen3', label: 'Kennzahlen III', icon: '' },
     ]
 
     const fetchData = async () => {
         setLoading(true)
         setShowSolutions(false)
         setFeedback({})
-        setInputs({
-            verschuldungsgrad: '',
-            fremdkapitalquote: '',
-            eigenkapitalquote: '',
-            anlagendeckungsgrad1: '',
-            anlagendeckungsgrad2: '',
-            liquiditaet1: '',
-            liquiditaet2: '',
-            liquiditaet3: '',
-            ebit: '',
-            ekRentVorSteuer: '',
-            ekRentNachSteuer: '',
-            umsatzRent: '',
-            gesamtkapRent: ''
-        })
+        
+        if (activeType === 'standard') {
+            setInputs({
+                verschuldungsgrad: '',
+                fremdkapitalquote: '',
+                eigenkapitalquote: '',
+                anlagendeckungsgrad1: '',
+                anlagendeckungsgrad2: '',
+                liquiditaet1: '',
+                liquiditaet2: '',
+                liquiditaet3: '',
+                ebit: '',
+                ekRentVorSteuer: '',
+                ekRentNachSteuer: '',
+                umsatzRent: '',
+                gesamtkapRent: ''
+            })
 
-        try {
-            const response = await fetch('/api/kennzahlen')
-            if (!response.ok) throw new Error('API request failed')
-            const result = await response.json()
-            setBalance(result.balance || [])
-            setGuV(result.guv || [])
-            setFigures(result.figures || {})
+            try {
+                const response = await fetch('/api/kennzahlen')
+                if (!response.ok) throw new Error('API request failed')
+                const result = await response.json()
+                setBalance(result.balance || [])
+                setGuV(result.guv || [])
+                setFigures(result.figures || {})
 
-        } catch (error) {
-            console.error('Error fetching data:', error)
-            setBalance([])
-            setGuV([])
-            setFigures({})
-        } finally {
+            } catch (error) {
+                console.error('Error fetching data:', error)
+                setBalance([])
+                setGuV([])
+                setFigures({})
+            } finally {
+                setLoading(false)
+            }
+        } else if (activeType === 'kennzahlen2') {
+            setInputs({
+                umsatzrendite: '',
+                ekr: '',
+                gkr: '',
+                ebit: '',
+                ebitda: '',
+                nopat: '',
+                ocf: '',
+                fcf: '',
+                wacc: '',
+                kapitalkosten: '',
+                eva: ''
+            })
+
+            try {
+                const response = await fetch('/api/kennzahlen2')
+                if (!response.ok) throw new Error('API request failed')
+                const result = await response.json()
+                setData2(result.data || {})
+                setSolutions2(result.solutions || {})
+
+            } catch (error) {
+                console.error('Error fetching data:', error)
+                setData2(null)
+                setSolutions2(null)
+            } finally {
+                setLoading(false)
+            }
+        } else {
             setLoading(false)
         }
     }
     useEffect(() => {
         fetchData()
-    }, [])
+    }, [activeType])
 
     const handleInputChange = (key: string, value: string) => {
         // Nur Ziffern und Punkt/Komma erlauben (für Dezimalzahlen)
@@ -144,7 +181,7 @@ export default function Kennzahlen() {
         return parseFloat(clean) || 0
     }
 
-    const mapping: Record<string, string> = {
+    const mapping = {
         verschuldungsgrad: 'Verschuldungsgrad',
         fremdkapitalquote: 'Fremdkapitalquote',
         eigenkapitalquote: 'Eigenkapitalquote',
@@ -160,9 +197,27 @@ export default function Kennzahlen() {
         gesamtkapRent: 'GKRvST'
     }
 
+    const mapping2: Record<string, string> = {
+        umsatzrendite: 'umsatzrendite',
+        ekr: 'ekr',
+        gkr: 'gkr',
+        ebit: 'ebit',
+        ebitda: 'ebitda',
+        nopat: 'nopat',
+        ocf: 'ocf',
+        fcf: 'fcf',
+        wacc: 'wacc',
+        kapitalkosten: 'kapitalkosten',
+        eva: 'eva'
+    }
+
     const checkSolutions = () => {
         const newFeedback: Record<string, 'correct' | 'wrong' | 'neutral'> = {}
-        
+        const currentMapping = activeType === 'kennzahlen2' ? mapping2 : mapping;
+        const currentFigures = activeType === 'kennzahlen2' ? solutions2 : figures;
+
+        if (!currentFigures || !currentMapping) return;
+
         Object.keys(inputs).forEach(key => {
             const userInput = inputs[key].trim()
             if (userInput === '') {
@@ -171,7 +226,7 @@ export default function Kennzahlen() {
             }
 
             const userValue = parseGermanNumber(userInput)
-            const correctValue = figures[mapping[key]]
+            const correctValue = (currentFigures as any)[(currentMapping as any)[key]]
 
             // Toleranz für Rundungsdifferenzen (0.1)
             const isCorrect = Math.abs(userValue - correctValue) < 0.1
@@ -182,11 +237,16 @@ export default function Kennzahlen() {
     }
 
     const toggleSolutions = () => {
+        const currentMapping = activeType === 'kennzahlen2' ? mapping2 : mapping;
+        const currentFigures = activeType === 'kennzahlen2' ? solutions2 : figures;
+
+        if (!currentFigures || !currentMapping) return;
+
         if (!showSolutions) {
             setPreviousInputs(inputs)
             const solvedInputs: Record<string, string> = {}
-            Object.keys(mapping).forEach(key => {
-                solvedInputs[key] = figures[mapping[key]]?.toString().replace('.', ',') || ''
+            Object.keys(currentMapping).forEach(key => {
+                solvedInputs[key] = (currentFigures as any)[(currentMapping as any)[key]]?.toString().replace('.', ',') || ''
             })
             setInputs(solvedInputs)
         } else {
@@ -435,6 +495,116 @@ export default function Kennzahlen() {
                                     <InputRow label="Eigenkapitalrentabilität (nach Steuern)" inputKey="ekRentNachSteuer" inputs={inputs} feedback={feedback} handleInputChange={handleInputChange} />
                                     <InputRow label="Umsatzrentabilität (nach Steuern)" inputKey="umsatzRent" inputs={inputs} feedback={feedback} handleInputChange={handleInputChange} />
                                     <InputRow label="Gesamtkapitalrentabilität (nach Steuern)" inputKey="gesamtkapRent" inputs={inputs} feedback={feedback} handleInputChange={handleInputChange} />
+                                </tbody>
+                            </table>
+                        </div>
+                    </div>
+                </div>
+            ) : activeType === 'kennzahlen2' ? (
+                <div className="space-y-12">
+                    {/* Daten Sektion */}
+                    <div className="bg-white shadow-md rounded-lg border border-gray-200">
+                        <div className="bg-gray-100 px-6 py-4 border-b border-gray-200 flex items-center gap-2 rounded-t-lg">
+                            <h2 className="text-xl font-semibold">Unternehmensdaten</h2>
+                        </div>
+                        <div className="p-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                            <div className="space-y-1">
+                                <p className="text-xs font-bold uppercase text-gray-500">Eigenkapital</p>
+                                <p className="text-lg font-mono">{data2?.ek?.toLocaleString('de-DE')} €</p>
+                            </div>
+                            <div className="space-y-1">
+                                <p className="text-xs font-bold uppercase text-gray-500">Fremdkapital</p>
+                                <p className="text-lg font-mono">{data2?.fk?.toLocaleString('de-DE')} €</p>
+                            </div>
+                            <div className="space-y-1">
+                                <p className="text-xs font-bold uppercase text-gray-500">Gesamtkapital</p>
+                                <p className="text-lg font-mono">{data2?.gk?.toLocaleString('de-DE')} €</p>
+                            </div>
+                            <div className="space-y-1 border-t pt-4">
+                                <p className="text-xs font-bold uppercase text-gray-500">Umsatzerlöse</p>
+                                <p className="text-lg font-mono">{data2?.umsatz?.toLocaleString('de-DE')} €</p>
+                            </div>
+                            <div className="space-y-1 border-t pt-4">
+                                <p className="text-xs font-bold uppercase text-gray-500">Zinsaufwand</p>
+                                <p className="text-lg font-mono">{data2?.zinsen?.toLocaleString('de-DE')} €</p>
+                            </div>
+                            <div className="space-y-1 border-t pt-4">
+                                <p className="text-xs font-bold uppercase text-gray-500">Ergebnis vor Steuer (EBT)</p>
+                                <p className="text-lg font-mono">{data2?.ebt?.toLocaleString('de-DE')} €</p>
+                            </div>
+                            <div className="space-y-1 border-t pt-4">
+                                <p className="text-xs font-bold uppercase text-gray-500">Steuern</p>
+                                <p className="text-lg font-mono">{data2?.steuer?.toLocaleString('de-DE')} €</p>
+                            </div>
+                            <div className="space-y-1 border-t pt-4">
+                                <p className="text-xs font-bold uppercase text-gray-500">Jahresüberschuss</p>
+                                <p className="text-lg font-mono">{data2?.net_income?.toLocaleString('de-DE')} €</p>
+                            </div>
+                            <div className="space-y-1 border-t pt-4">
+                                <p className="text-xs font-bold uppercase text-gray-500">Abschreibungen</p>
+                                <p className="text-lg font-mono">{data2?.abschreibungen?.toLocaleString('de-DE')} €</p>
+                            </div>
+                            <div className="space-y-1 border-t pt-4">
+                                <p className="text-xs font-bold uppercase text-gray-500">Δ Pensionsrückstellungen</p>
+                                <p className="text-lg font-mono">{data2?.pensionsrueckstellungen?.toLocaleString('de-DE')} €</p>
+                            </div>
+                            <div className="space-y-1 border-t pt-4">
+                                <p className="text-xs font-bold uppercase text-gray-500">Δ Working Capital</p>
+                                <p className="text-lg font-mono">{data2?.working_capital?.toLocaleString('de-DE')} €</p>
+                            </div>
+                            <div className="space-y-1 border-t pt-4">
+                                <p className="text-xs font-bold uppercase text-gray-500">Investitionen (Capex)</p>
+                                <p className="text-lg font-mono">{data2?.investitionen?.toLocaleString('de-DE')} €</p>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Kennzahlen Sektion */}
+                    <div className="bg-white shadow-md rounded-lg border border-gray-200">
+                        <div className="bg-gray-100 px-6 py-4 border-b border-gray-200 flex justify-between items-center rounded-t-lg">
+                            <div>
+                                <h2 className="text-xl font-semibold">Kennzahlen II (Eingabe)</h2>
+                                <p className="text-sm text-gray-500 mt-1">Berechne die erweiterten Kennzahlen und Cashflows.</p>
+                            </div>
+                            <div className="flex gap-4">
+                                <button 
+                                    onClick={toggleSolutions}
+                                    className={`px-6 py-3 rounded-2xl font-bold transition-all shadow-sm active:scale-95 ${
+                                        showSolutions 
+                                            ? 'bg-zinc-800 text-white hover:bg-zinc-700' 
+                                            : 'bg-zinc-100 text-zinc-900 hover:bg-zinc-200'
+                                    }`}
+                                >
+                                    {showSolutions ? 'Lösungen ausblenden' : 'Lösungen anzeigen'}
+                                </button>
+                                <button 
+                                    onClick={checkSolutions}
+                                    className="px-6 py-3 bg-zinc-900 text-white rounded-2xl font-bold hover:bg-zinc-800 transition-colors shadow-lg active:scale-95"
+                                >
+                                    Ergebnisse prüfen
+                                </button>
+                            </div>
+                        </div>
+                        <div className="p-4 overflow-x-auto">
+                            <table className="w-full text-left border-collapse">
+                                <thead>
+                                    <tr className="text-xs text-gray-600 border-b bg-gray-50 uppercase tracking-wider">
+                                        <th className="py-2 px-2">Kennzahl</th>
+                                        <th className="py-2 px-2 text-right w-48">Eingabe</th>
+                                    </tr>
+                                </thead>
+                                <tbody className="divide-y divide-gray-100">
+                                    <InputRow label="Umsatzrendite (vor Steuern)" inputKey="umsatzrendite" inputs={inputs} feedback={feedback} handleInputChange={handleInputChange} />
+                                    <InputRow label="Eigenkapitalrentabilität (nach Steuern)" inputKey="ekr" inputs={inputs} feedback={feedback} handleInputChange={handleInputChange} />
+                                    <InputRow label="Gesamtkapitalrentabilität (nach Steuern)" inputKey="gkr" inputs={inputs} feedback={feedback} handleInputChange={handleInputChange} />
+                                    <InputRow label="EBIT" inputKey="ebit" inputs={inputs} feedback={feedback} handleInputChange={handleInputChange} suffix="€" />
+                                    <InputRow label="EBITDA" inputKey="ebitda" inputs={inputs} feedback={feedback} handleInputChange={handleInputChange} suffix="€" />
+                                    <InputRow label="NOPAT" inputKey="nopat" inputs={inputs} feedback={feedback} handleInputChange={handleInputChange} suffix="€" />
+                                    <InputRow label="Operating Cash Flow (OCF)" inputKey="ocf" inputs={inputs} feedback={feedback} handleInputChange={handleInputChange} suffix="€" />
+                                    <InputRow label="Free Cash Flow (FCF)" inputKey="fcf" inputs={inputs} feedback={feedback} handleInputChange={handleInputChange} suffix="€" />
+                                    <InputRow label="WACC" inputKey="wacc" inputs={inputs} feedback={feedback} handleInputChange={handleInputChange} />
+                                    <InputRow label="Kapitalkosten" inputKey="kapitalkosten" inputs={inputs} feedback={feedback} handleInputChange={handleInputChange} suffix="€" />
+                                    <InputRow label="Economic Value Added (EVA)" inputKey="eva" inputs={inputs} feedback={feedback} handleInputChange={handleInputChange} suffix="€" />
                                 </tbody>
                             </table>
                         </div>
