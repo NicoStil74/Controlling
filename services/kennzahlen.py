@@ -2,7 +2,8 @@
 import random
 from datetime import datetime, timedelta
 
-from pymupdf.mupdf import pint_assign
+def get_rand_fk_zins():
+    return round(random.uniform(0.03,0.1),2)
 
 
 class KennzahlenService():
@@ -290,5 +291,87 @@ class KennzahlenService():
 
         return{
             'data': data,
+            'solutions': solutions
+        }
+
+    @staticmethod
+    def generate3():
+    # data3 = {
+    #     'ek': 600000,
+    #     'fk': 700000,
+    #     'fk_zins': 0.04,
+    #     'ebt': 100000,
+    #     'steuersatz': 0.25,
+    #     'ek_zins': 0.10
+    # }
+
+
+        # ===== KapitalKennzahlen ===== 
+        gk = random.randint(100_000, 2_000_000)
+        ek = round(gk * random.uniform(0.15,0.6),2)
+        fk = gk - ek
+        fk_zins = get_rand_fk_zins()
+
+
+        # ===== Profitabilität ===== 
+        roce = random.uniform(0.05, 0.2)
+        ebit = gk * roce
+
+        zins = fk * fk_zins
+
+        ebt = ebit - zins 
+
+        return{
+            'ek': ek,
+            'gk': gk,
+            'fk_zins': fk_zins,
+            'ebt': ebt,
+            'steuersatz': 0.25,
+            'ek_zins': 0.1
+        }
+
+    @staticmethod
+    def calculate_figures3(data):
+        
+        # ===== KapitalKennzahlen  ===== 
+        ek = data['ek']
+        fk = data['fk']
+        gk = ek + fk 
+        steuersatz = data['steuersatz']
+
+        # ===== Gewinn ===== 
+        ebt = data['ebt']
+        eat = round(ebt * (1-steuersatz),2)
+
+
+        # ===== Profit (Before / After Tax) =====         
+        opat = round(ebt * (1- steuersatz),2)
+        nopat = eat + round((fk * data['fk_zins']),2)
+        nopat_roce = round(nopat / (ek + fk),4)
+        
+
+        # ===== Kapitalkosten ===== 
+        wacc = round((ek / gk) * data['ek_zins'] + (ek / gk) * data['fk_zins'],4)
+        total_capital_cost = round(ek * data['ek_zins'] + fk * data['fk_zins'],2)
+        eva = round(nopat - total_capital_cost,2)
+
+
+        return {
+                'opat': opat,
+                'nopat': nopat,
+                'nopat_roce': nopat_roce,
+                'wacc': wacc,
+                'kapitalkosten': total_capital_cost,
+                'eva': eva
+        }   
+    
+    @staticmethod
+    def get_package3():
+        
+        data = KennzahlenService.generate3(),
+        solutions = KennzahlenService.calculate_figures3(data)
+
+        return {
+            'data': data, 
             'solutions': solutions
         }

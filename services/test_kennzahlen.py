@@ -59,5 +59,14 @@ data2 = {
     'kapitalkosten_ek': 0.12
 }
 
-solution = KennzahlenService().calculate_figures2(data2)
+data3 = {
+    'ek': 600000,
+    'fk': 700000,
+    'fk_zins': 0.04,
+    'ebt': 100000,
+    'steuersatz': 0.25,
+    'ek_zins': 0.10
+}
+
+solution = KennzahlenService().calculate_figures3(data3)
 printj(solution)
