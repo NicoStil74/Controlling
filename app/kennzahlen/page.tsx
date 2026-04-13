@@ -85,6 +85,12 @@ export default function Kennzahlen() {
 
     const [previousInputs, setPreviousInputs] = useState<Record<string, string>>({});
     const [loading, setLoading] = useState(true)
+    const [activeType, setActiveType] = useState('standard')
+
+    const modes = [
+        { id: 'standard', label: 'Basis-Analyse', icon: '📊' },
+        { id: 'missing', label: 'Lücken-Bilanz', icon: '🔍' },
+    ]
 
     const fetchData = async () => {
         setLoading(true)
@@ -236,183 +242,219 @@ export default function Kennzahlen() {
                     <Link href="/" className="text-blue-600 hover:underline">← Zurück zur Übersicht</Link>
                 </div>
             </div>
+
+            {/* Exercise Mode Switcher */}
+            <div className="flex p-1 bg-zinc-100 rounded-2xl w-fit border border-zinc-200 shadow-inner">
+                {modes.map((mode) => (
+                    <button
+                        key={mode.id}
+                        onClick={() => setActiveType(mode.id)}
+                        className={`flex items-center gap-2 px-6 py-2.5 rounded-xl text-sm font-bold transition-all ${
+                            activeType === mode.id
+                                ? 'bg-white text-zinc-900 shadow-md scale-[1.02]'
+                                : 'text-zinc-500 hover:text-zinc-700 hover:bg-zinc-200/50'
+                        }`}
+                    >
+                        <span>{mode.icon}</span>
+                        {mode.label}
+                    </button>
+                ))}
+            </div>
             
-            {/* Bilanz Sektion */}
-            <div className="bg-white shadow-md rounded-lg border border-gray-200">
-                <div className="bg-gray-100 px-6 py-4 border-b border-gray-200 flex items-center gap-2 rounded-t-lg">
-                    <h2 className="text-xl font-semibold">Bilanz in TEUR</h2>
-                    <div className="group relative">
-                        <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="text-zinc-400 hover:text-zinc-600 transition-colors cursor-help">
-                            <circle cx="12" cy="12" r="10"></circle>
-                            <path d="M12 16v-4"></path>
-                            <path d="M12 8h.01"></path>
-                        </svg>
-                        <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2 bg-zinc-800 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none font-medium shadow-xl z-[100]">
-                            Geringfügige Abweichungen durch Rundungen sind möglich.
-                            <div className="absolute top-full left-1/2 -translate-x-1/2 border-8 border-transparent border-t-zinc-800"></div>
+            {activeType === 'standard' ? (
+                <div className="space-y-12">
+                    {/* Bilanz Sektion */}
+                    <div className="bg-white shadow-md rounded-lg border border-gray-200">
+                        <div className="bg-gray-100 px-6 py-4 border-b border-gray-200 flex items-center gap-2 rounded-t-lg">
+                            <h2 className="text-xl font-semibold">Bilanz in TEUR</h2>
+                            <div className="group relative">
+                                <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" className="text-zinc-400 hover:text-zinc-600 transition-colors cursor-help">
+                                    <circle cx="12" cy="12" r="10"></circle>
+                                    <path d="M12 16v-4"></path>
+                                    <path d="M12 8h.01"></path>
+                                </svg>
+                                <div className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-3 py-2 bg-zinc-800 text-white text-xs rounded-lg opacity-0 group-hover:opacity-100 transition-opacity whitespace-nowrap pointer-events-none font-medium shadow-xl z-[100]">
+                                    Geringfügige Abweichungen durch Rundungen sind möglich.
+                                    <div className="absolute top-full left-1/2 -translate-x-1/2 border-8 border-transparent border-t-zinc-800"></div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <div className="grid grid-cols-1 lg:grid-cols-2 divide-y lg:divide-y-0 lg:divide-x divide-gray-200">
+                            {/* Aktiva */}
+                            <div className="p-4 overflow-x-auto">
+                                <h3 className="font-bold text-lg mb-3 border-b pb-2 text-blue-800">Aktiva</h3>
+                                <table className="w-full text-left min-w-[300px]">
+                                    <thead>
+                                        <tr className="text-xs text-gray-600 border-b bg-gray-50 uppercase tracking-wider">
+                                            <th className="py-2 px-2">Posten</th>
+                                            <th className="py-2 px-2 text-right w-32">Betrag (TEUR)</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody className="divide-y divide-gray-100">
+                                        <tr className="bg-gray-50"><td colSpan={2} className="py-1 px-2 font-bold text-xs uppercase text-gray-500">Anlagevermögen</td></tr>
+                                        {(balance || []).filter(item => item?.type === 'Anlagevermögen').map((row, i)=>(
+                                            <DataRow key={i} label={row.name} amount={row.amount} />
+                                        ))}
+                                        <tr className="bg-gray-50">
+                                            <td colSpan={2} className="py-1 px-2 font-bold text-xs uppercase text-gray-500">Umlaufvermögen</td>
+                                        </tr>
+                                        {(balance || []).filter(item => item?.type === 'Umlaufvermögen').map((row, i)=>(
+                                            <DataRow key={i} label={row.name} amount={row.amount} />
+                                        ))}
+                                    </tbody>
+                                    <tfoot>
+                                        <tr className="bg-blue-50 font-bold border-t-2 border-blue-200">
+                                            <td className="py-3 px-2 text-lg">Summe Aktiva</td>
+                                            <td className="py-3 px-2 text-right text-lg">
+                                                {sumAktiva.toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                            </td>
+                                        </tr>
+                                    </tfoot>
+                                </table>
+                            </div>
+
+                            {/* Passiva */}
+                            <div className="p-4 overflow-x-auto">
+                                <h3 className="font-bold text-lg mb-3 border-b pb-2 text-red-800">Passiva</h3>
+                                <table className="w-full text-left min-w-[300px]">
+                                    <thead>
+                                        <tr className="text-xs text-gray-600 border-b bg-gray-50 uppercase tracking-wider">
+                                            <th className="py-2 px-2">Posten</th>
+                                            <th className="py-2 px-2 text-right w-32">Betrag (TEUR)</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody className="divide-y divide-gray-100">
+                                        <tr className="bg-gray-50"><td colSpan={2} className="py-1 px-2 font-bold text-xs uppercase text-gray-500">Eigenkapital</td></tr>
+                                        {(balance || []).filter(item => item?.type === 'Eigenkapital').map((row, i)=>(
+                                            <DataRow key={i} label={row.name} amount={row.amount} />
+                                        ))}
+                                        <tr className="bg-gray-50"><td colSpan={2} className="py-1 px-2 font-bold text-xs uppercase text-gray-500">Fremdkapital</td></tr>
+                                        {(balance || []).filter(item => item?.type === 'Fremdkapital').map((row, i)=>(
+                                            <DataRow key={i} label={row.name} amount={row.amount} />
+                                        ))}
+                                    </tbody>
+                                    <tfoot>
+                                        <tr className="bg-red-50 font-bold border-t-2 border-red-200">
+                                            <td className="py-3 px-2 text-lg">Summe Passiva</td>
+                                            <td className="py-3 px-2 text-right text-lg">
+                                                {sumPassiva.toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
+                                            </td>
+                                        </tr>
+                                    </tfoot>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* GuV Sektion */}
+                    <div className="bg-white shadow-md rounded-lg border border-gray-200">
+                        <div className="bg-gray-100 px-6 py-4 border-b border-gray-200 flex justify-between items-center rounded-t-lg">
+                            <h2 className="text-xl font-semibold">GuV Rechnung in TEUR</h2>
+                            <span className="text-sm font-medium text-gray-600 bg-gray-200 px-3 py-1 rounded-full">Steuersatz = 30%</span>
+                        </div>
+                        
+                        <div className="grid grid-cols-1 lg:grid-cols-2 divide-y lg:divide-y-0 lg:divide-x divide-gray-200">
+                            {/* Aufwand */}
+                            <div className="p-4">
+                                <h3 className="font-bold text-lg mb-3 border-b pb-2 text-orange-800">Aufwand</h3>
+                                <table className="w-full text-left">
+                                    <tbody className="divide-y divide-gray-100">
+                                        {(guv || []).filter(item => item?.type === 'Aufwand').map((row, i)=>(
+                                            <DataRow key={i} label={row.name} amount={row.amount} />
+                                        ))}
+                                        <tr className="bg-orange-50 font-bold border-t-2 border-orange-200">
+                                            <td className="py-2 px-2 text-sm">Gewinn vor Steuer</td>
+                                            <td className="py-2 px-2 text-right text-sm">
+                                                {(guv || []).find(item => item?.name === 'Gewinn vor Steuer')?.amount?.toLocaleString('de-DE')}
+                                            </td>
+                                        </tr>
+                                    </tbody>
+                                </table>
+                            </div>
+
+                            {/* Ertrag */}
+                            <div className="p-4">
+                                <h3 className="font-bold text-lg mb-3 border-b pb-2 text-green-800">Ertrag</h3>
+                                <table className="w-full text-left">
+                                    <tbody className="divide-y divide-gray-100">
+                                        {(guv || []).filter(item => item?.type === 'Ertrag').map((row, i)=>(
+                                            <DataRow key={i} label={row.name} amount={row.amount} />
+                                        ))}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+
+                    {/* Kennzahlen Sektion */}
+                    <div className="bg-white shadow-md rounded-lg border border-gray-200">
+                        <div className="bg-gray-100 px-6 py-4 border-b border-gray-200 flex justify-between items-center rounded-t-lg">
+                            <div>
+                                <h2 className="text-xl font-semibold">Kennzahlen (Eingabe)</h2>
+                                <p className="text-sm text-gray-500 mt-1">Bitte gib die Ergebnisse mit zwei Nachkommastellen an (z. B. 12,34).</p>
+                            </div>
+                            <div className="flex gap-4">
+                                <button 
+                                    onClick={toggleSolutions}
+                                    className={`px-6 py-3 rounded-2xl font-bold transition-all shadow-sm active:scale-95 ${
+                                        showSolutions 
+                                            ? 'bg-zinc-800 text-white hover:bg-zinc-700' 
+                                            : 'bg-zinc-100 text-zinc-900 hover:bg-zinc-200'
+                                    }`}
+                                >
+                                    {showSolutions ? 'Lösungen ausblenden' : 'Lösungen anzeigen'}
+                                </button>
+                                <button 
+                                    onClick={checkSolutions}
+                                    className="px-6 py-3 bg-zinc-900 text-white rounded-2xl font-bold hover:bg-zinc-800 transition-colors shadow-lg active:scale-95"
+                                >
+                                    Ergebnisse prüfen
+                                </button>
+                            </div>
+                        </div>
+                        <div className="p-4 overflow-x-auto">
+                            <table className="w-full text-left border-collapse">
+                                <thead>
+                                    <tr className="text-xs text-gray-600 border-b bg-gray-50 uppercase tracking-wider">
+                                        <th className="py-2 px-2">Kennzahl</th>
+                                        <th className="py-2 px-2 text-right w-48">Eingabe</th>
+                                    </tr>
+                                </thead>
+                                <tbody className="divide-y divide-gray-100">
+                                    <InputRow label="Verschuldungsgrad" inputKey="verschuldungsgrad" inputs={inputs} feedback={feedback} handleInputChange={handleInputChange} />
+                                    <InputRow label="Fremdkapitalquote" inputKey="fremdkapitalquote" inputs={inputs} feedback={feedback} handleInputChange={handleInputChange} />
+                                    <InputRow label="Eigenkapitalquote" inputKey="eigenkapitalquote" inputs={inputs} feedback={feedback} handleInputChange={handleInputChange} />
+                                    <InputRow label="Anlagendeckungsgrad I" inputKey="anlagendeckungsgrad1" inputs={inputs} feedback={feedback} handleInputChange={handleInputChange} />
+                                    <InputRow label="Anlagendeckungsgrad II" inputKey="anlagendeckungsgrad2" inputs={inputs} feedback={feedback} handleInputChange={handleInputChange} />
+                                    <InputRow label="Liquidität 1. Grades" inputKey="liquiditaet1" inputs={inputs} feedback={feedback} handleInputChange={handleInputChange} />
+                                    <InputRow label="Liquidität 2. Grades" inputKey="liquiditaet2" inputs={inputs} feedback={feedback} handleInputChange={handleInputChange} />
+                                    <InputRow label="Liquidität 3. Grades" inputKey="liquiditaet3" inputs={inputs} feedback={feedback} handleInputChange={handleInputChange} />
+                                    <InputRow label="EBIT" inputKey="ebit" inputs={inputs} feedback={feedback} handleInputChange={handleInputChange} suffix="TEUR" />
+                                    <InputRow label="Eigenkapitalrentabilität (vor Steuern)" inputKey="ekRentVorSteuer" inputs={inputs} feedback={feedback} handleInputChange={handleInputChange} />
+                                    <InputRow label="Eigenkapitalrentabilität (nach Steuern)" inputKey="ekRentNachSteuer" inputs={inputs} feedback={feedback} handleInputChange={handleInputChange} />
+                                    <InputRow label="Umsatzrentabilität (nach Steuern)" inputKey="umsatzRent" inputs={inputs} feedback={feedback} handleInputChange={handleInputChange} />
+                                    <InputRow label="Gesamtkapitalrentabilität (nach Steuern)" inputKey="gesamtkapRent" inputs={inputs} feedback={feedback} handleInputChange={handleInputChange} />
+                                </tbody>
+                            </table>
                         </div>
                     </div>
                 </div>
-                
-                <div className="grid grid-cols-1 lg:grid-cols-2 divide-y lg:divide-y-0 lg:divide-x divide-gray-200">
-                    {/* Aktiva */}
-                    <div className="p-4 overflow-x-auto">
-                        <h3 className="font-bold text-lg mb-3 border-b pb-2 text-blue-800">Aktiva</h3>
-                        <table className="w-full text-left min-w-[300px]">
-                            <thead>
-                                <tr className="text-xs text-gray-600 border-b bg-gray-50 uppercase tracking-wider">
-                                    <th className="py-2 px-2">Posten</th>
-                                    <th className="py-2 px-2 text-right w-32">Betrag (TEUR)</th>
-                                </tr>
-                            </thead>
-                            <tbody className="divide-y divide-gray-100">
-                                <tr className="bg-gray-50"><td colSpan={2} className="py-1 px-2 font-bold text-xs uppercase text-gray-500">Anlagevermögen</td></tr>
-                                {(balance || []).filter(item => item?.type === 'Anlagevermögen').map((row, i)=>(
-                                    <DataRow key={i} label={row.name} amount={row.amount} />
-                                ))}
-                                <tr className="bg-gray-50">
-                                    <td colSpan={2} className="py-1 px-2 font-bold text-xs uppercase text-gray-500">Umlaufvermögen</td>
-                                </tr>
-                                {(balance || []).filter(item => item?.type === 'Umlaufvermögen').map((row, i)=>(
-                                    <DataRow key={i} label={row.name} amount={row.amount} />
-                                ))}
-                            </tbody>
-                            <tfoot>
-                                <tr className="bg-blue-50 font-bold border-t-2 border-blue-200">
-                                    <td className="py-3 px-2 text-lg">Summe Aktiva</td>
-                                    <td className="py-3 px-2 text-right text-lg">
-                                        {sumAktiva.toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                                    </td>
-                                </tr>
-                            </tfoot>
-                        </table>
-                    </div>
-
-                    {/* Passiva */}
-                    <div className="p-4 overflow-x-auto">
-                        <h3 className="font-bold text-lg mb-3 border-b pb-2 text-red-800">Passiva</h3>
-                        <table className="w-full text-left min-w-[300px]">
-                            <thead>
-                                <tr className="text-xs text-gray-600 border-b bg-gray-50 uppercase tracking-wider">
-                                    <th className="py-2 px-2">Posten</th>
-                                    <th className="py-2 px-2 text-right w-32">Betrag (TEUR)</th>
-                                </tr>
-                            </thead>
-                            <tbody className="divide-y divide-gray-100">
-                                <tr className="bg-gray-50"><td colSpan={2} className="py-1 px-2 font-bold text-xs uppercase text-gray-500">Eigenkapital</td></tr>
-                                {(balance || []).filter(item => item?.type === 'Eigenkapital').map((row, i)=>(
-                                    <DataRow key={i} label={row.name} amount={row.amount} />
-                                ))}
-                                <tr className="bg-gray-50"><td colSpan={2} className="py-1 px-2 font-bold text-xs uppercase text-gray-500">Fremdkapital</td></tr>
-                                {(balance || []).filter(item => item?.type === 'Fremdkapital').map((row, i)=>(
-                                    <DataRow key={i} label={row.name} amount={row.amount} />
-                                ))}
-                            </tbody>
-                            <tfoot>
-                                <tr className="bg-red-50 font-bold border-t-2 border-red-200">
-                                    <td className="py-3 px-2 text-lg">Summe Passiva</td>
-                                    <td className="py-3 px-2 text-right text-lg">
-                                        {sumPassiva.toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}
-                                    </td>
-                                </tr>
-                            </tfoot>
-                        </table>
-                    </div>
+            ) : (
+                <div className="bg-white p-12 rounded-3xl border-2 border-dashed border-zinc-200 text-center space-y-4">
+                    <div className="text-4xl text-zinc-300">🔍</div>
+                    <h3 className="text-xl font-bold text-zinc-900">Lücken-Bilanz folgt in Kürze</h3>
+                    <p className="text-zinc-500 max-w-sm mx-auto">
+                        In diesem Modus musst du die Bilanzposten anhand gegebener Kennzahlen vervollständigen.
+                    </p>
+                    <button 
+                        onClick={() => setActiveType('standard')}
+                        className="text-blue-600 font-bold hover:underline"
+                    >
+                        Zurück zur Basis-Analyse
+                    </button>
                 </div>
-            </div>
-
-            {/* GuV Sektion */}
-            <div className="bg-white shadow-md rounded-lg border border-gray-200">
-                <div className="bg-gray-100 px-6 py-4 border-b border-gray-200 flex justify-between items-center rounded-t-lg">
-                    <h2 className="text-xl font-semibold">GuV Rechnung in TEUR</h2>
-                    <span className="text-sm font-medium text-gray-600 bg-gray-200 px-3 py-1 rounded-full">Steuersatz = 30%</span>
-                </div>
-                
-                <div className="grid grid-cols-1 lg:grid-cols-2 divide-y lg:divide-y-0 lg:divide-x divide-gray-200">
-                    {/* Aufwand */}
-                    <div className="p-4">
-                        <h3 className="font-bold text-lg mb-3 border-b pb-2 text-orange-800">Aufwand</h3>
-                        <table className="w-full text-left">
-                            <tbody className="divide-y divide-gray-100">
-                                {(guv || []).filter(item => item?.type === 'Aufwand').map((row, i)=>(
-                                    <DataRow key={i} label={row.name} amount={row.amount} />
-                                ))}
-                                <tr className="bg-orange-50 font-bold border-t-2 border-orange-200">
-                                    <td className="py-2 px-2 text-sm">Gewinn vor Steuer</td>
-                                    <td className="py-2 px-2 text-right text-sm">
-                                        {(guv || []).find(item => item?.name === 'Gewinn vor Steuer')?.amount?.toLocaleString('de-DE')}
-                                    </td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </div>
-
-                    {/* Ertrag */}
-                    <div className="p-4">
-                        <h3 className="font-bold text-lg mb-3 border-b pb-2 text-green-800">Ertrag</h3>
-                        <table className="w-full text-left">
-                            <tbody className="divide-y divide-gray-100">
-                                {(guv || []).filter(item => item?.type === 'Ertrag').map((row, i)=>(
-                                    <DataRow key={i} label={row.name} amount={row.amount} />
-                                ))}
-                            </tbody>
-                        </table>
-                    </div>
-                </div>
-            </div>
-
-            {/* Kennzahlen Sektion */}
-            <div className="bg-white shadow-md rounded-lg border border-gray-200">
-                <div className="bg-gray-100 px-6 py-4 border-b border-gray-200 flex justify-between items-center rounded-t-lg">
-                    <div>
-                        <h2 className="text-xl font-semibold">Kennzahlen (Eingabe)</h2>
-                        <p className="text-sm text-gray-500 mt-1">Bitte gib die Ergebnisse mit zwei Nachkommastellen an (z. B. 12,34).</p>
-                    </div>
-                    <div className="flex gap-4">
-                        <button 
-                            onClick={toggleSolutions}
-                            className={`px-6 py-3 rounded-2xl font-bold transition-all shadow-sm active:scale-95 ${
-                                showSolutions 
-                                    ? 'bg-zinc-800 text-white hover:bg-zinc-700' 
-                                    : 'bg-zinc-100 text-zinc-900 hover:bg-zinc-200'
-                            }`}
-                        >
-                            {showSolutions ? 'Lösungen ausblenden' : 'Lösungen anzeigen'}
-                        </button>
-                        <button 
-                            onClick={checkSolutions}
-                            className="px-6 py-3 bg-zinc-900 text-white rounded-2xl font-bold hover:bg-zinc-800 transition-colors shadow-lg active:scale-95"
-                        >
-                            Ergebnisse prüfen
-                        </button>
-                    </div>
-                </div>
-                <div className="p-4 overflow-x-auto">
-                    <table className="w-full text-left border-collapse">
-                        <thead>
-                            <tr className="text-xs text-gray-600 border-b bg-gray-50 uppercase tracking-wider">
-                                <th className="py-2 px-2">Kennzahl</th>
-                                <th className="py-2 px-2 text-right w-48">Eingabe</th>
-                            </tr>
-                        </thead>
-                        <tbody className="divide-y divide-gray-100">
-                            <InputRow label="Verschuldungsgrad" inputKey="verschuldungsgrad" inputs={inputs} feedback={feedback} handleInputChange={handleInputChange} />
-                            <InputRow label="Fremdkapitalquote" inputKey="fremdkapitalquote" inputs={inputs} feedback={feedback} handleInputChange={handleInputChange} />
-                            <InputRow label="Eigenkapitalquote" inputKey="eigenkapitalquote" inputs={inputs} feedback={feedback} handleInputChange={handleInputChange} />
-                            <InputRow label="Anlagendeckungsgrad I" inputKey="anlagendeckungsgrad1" inputs={inputs} feedback={feedback} handleInputChange={handleInputChange} />
-                            <InputRow label="Anlagendeckungsgrad II" inputKey="anlagendeckungsgrad2" inputs={inputs} feedback={feedback} handleInputChange={handleInputChange} />
-                            <InputRow label="Liquidität 1. Grades" inputKey="liquiditaet1" inputs={inputs} feedback={feedback} handleInputChange={handleInputChange} />
-                            <InputRow label="Liquidität 2. Grades" inputKey="liquiditaet2" inputs={inputs} feedback={feedback} handleInputChange={handleInputChange} />
-                            <InputRow label="Liquidität 3. Grades" inputKey="liquiditaet3" inputs={inputs} feedback={feedback} handleInputChange={handleInputChange} />
-                            <InputRow label="EBIT" inputKey="ebit" inputs={inputs} feedback={feedback} handleInputChange={handleInputChange} suffix="TEUR" />
-                            <InputRow label="Eigenkapitalrentabilität (vor Steuern)" inputKey="ekRentVorSteuer" inputs={inputs} feedback={feedback} handleInputChange={handleInputChange} />
-                            <InputRow label="Eigenkapitalrentabilität (nach Steuern)" inputKey="ekRentNachSteuer" inputs={inputs} feedback={feedback} handleInputChange={handleInputChange} />
-                            <InputRow label="Umsatzrentabilität (nach Steuern)" inputKey="umsatzRent" inputs={inputs} feedback={feedback} handleInputChange={handleInputChange} />
-                            <InputRow label="Gesamtkapitalrentabilität (nach Steuern)" inputKey="gesamtkapRent" inputs={inputs} feedback={feedback} handleInputChange={handleInputChange} />
-                        </tbody>
-                    </table>
-                </div>
-            </div>
+            )}
         </main>
     )
 }
