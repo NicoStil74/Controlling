@@ -189,7 +189,7 @@ class KennzahlenService():
         capex = round(umsatz * random.uniform(0.05, 0.20), 2)
 
         # ===== Kapitalkostensatz fr Eigenkapital =====
-        capital_cost_eq = round(random.uniform(0.1, 0.14), 2)
+        capital_cost_eq = round(random.uniform(0.08, 0.14), 2)
 
 
         return {

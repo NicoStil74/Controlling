@@ -264,7 +264,7 @@ export default function Kennzahlen() {
                 if (roundToInteger && activeType === 'kennzahlen2') {
                     val = Math.round(val)
                 }
-                solvedInputs[key] = val?.toString().replace('.', ',') || ''
+                solvedInputs[key] = formatNumber(val)
             })
             setInputs(solvedInputs)
         } else {
@@ -538,36 +538,28 @@ export default function Kennzahlen() {
                             </label>
                         </div>
                         <div className="p-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                            <div className="space-y-1">
+                            <div className="space-y-1 border-t pt-4">
                                 <p className="text-xs font-bold uppercase text-gray-500">Eigenkapital</p>
                                 <p className="text-lg font-mono">{formatNumber(data2?.ek)} €</p>
                             </div>
-                            <div className="space-y-1">
+                            <div className="space-y-1 border-t pt-4" >
                                 <p className="text-xs font-bold uppercase text-gray-500">Fremdkapital</p>
                                 <p className="text-lg font-mono">{formatNumber(data2?.fk)} €</p>
-                            </div>
-                            <div className="space-y-1">
-                                <p className="text-xs font-bold uppercase text-gray-500">Gesamtkapital</p>
-                                <p className="text-lg font-mono">{formatNumber(data2?.gk)} €</p>
-                            </div>
-                            <div className="space-y-1 border-t pt-4">
-                                <p className="text-xs font-bold uppercase text-gray-500">Umsatzerlöse</p>
-                                <p className="text-lg font-mono">{formatNumber(data2?.umsatz)} €</p>
                             </div>
                             <div className="space-y-1 border-t pt-4">
                                 <p className="text-xs font-bold uppercase text-gray-500">Fremdkapitalzinssatz</p>
                                 <p className="text-lg font-mono">{formatNumber(data2?.fk_zins * 100)} %</p>
                             </div>
                             <div className="space-y-1 border-t pt-4">
-                                <p className="text-xs font-bold uppercase text-gray-500">Ergebnis vor Steuer (EBT)</p>
+                                <p className="text-xs font-bold uppercase text-gray-500">Umsatzerlöse</p>
+                                <p className="text-lg font-mono">{formatNumber(data2?.umsatz)} €</p>
+                            </div>
+                            <div className="space-y-1 border-t pt-4">
+                                <p className="text-xs font-bold uppercase text-gray-500">Gewinn vor Steuer (EBT)</p>
                                 <p className="text-lg font-mono">{formatNumber(data2?.ebt)} €</p>
                             </div>
                             <div className="space-y-1 border-t pt-4">
-                                <p className="text-xs font-bold uppercase text-gray-500">Steuern</p>
-                                <p className="text-lg font-mono">{formatNumber(data2?.steuer)} €</p>
-                            </div>
-                            <div className="space-y-1 border-t pt-4">
-                                <p className="text-xs font-bold uppercase text-gray-500">Jahresüberschuss</p>
+                                <p className="text-xs font-bold uppercase text-gray-500">Gewinn nach Steuer (JÜ)</p>
                                 <p className="text-lg font-mono">{formatNumber(data2?.net_income)} €</p>
                             </div>
                             <div className="space-y-1 border-t pt-4">
@@ -575,16 +567,20 @@ export default function Kennzahlen() {
                                 <p className="text-lg font-mono">{formatNumber(data2?.abschreibungen)} €</p>
                             </div>
                             <div className="space-y-1 border-t pt-4">
-                                <p className="text-xs font-bold uppercase text-gray-500">Δ Pensionsrückstellungen</p>
+                                <p className="text-xs font-bold uppercase text-gray-500">Veränderungen Pensionsrückstellungen</p>
                                 <p className="text-lg font-mono">{formatNumber(data2?.pensionsrueckstellungen)} €</p>
                             </div>
                             <div className="space-y-1 border-t pt-4">
-                                <p className="text-xs font-bold uppercase text-gray-500">Δ Working Capital</p>
+                                <p className="text-xs font-bold uppercase text-gray-500">Veränderungen Working Capital</p>
                                 <p className="text-lg font-mono">{formatNumber(data2?.working_capital)} €</p>
                             </div>
                             <div className="space-y-1 border-t pt-4">
                                 <p className="text-xs font-bold uppercase text-gray-500">Investitionen (Capex)</p>
                                 <p className="text-lg font-mono">{formatNumber(data2?.investitionen)} €</p>
+                            </div>
+                            <div className="space-y-1 border-t pt-4">
+                                <p className="text-xs font-bold uppercase text-gray-500">Kapitalkostensatz für Eigenkapital nach Steuern</p>
+                                <p className="text-lg font-mono">{formatNumber(data2?.kapitalkosten_ek * 100) } %</p>
                             </div>
                         </div>
                     </div>
