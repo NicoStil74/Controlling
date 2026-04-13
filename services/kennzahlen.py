@@ -12,7 +12,7 @@ class KennzahlenService():
         self.guv = []
         self.steuersatz = 0.3
 
-    def generate(self):
+    def generate1(self):
         balance_sum = random.randint(250, 5000)
         av_ratio = random.uniform(0.3, 0.6)
         uv_ratio = 1 -  av_ratio
@@ -93,7 +93,7 @@ class KennzahlenService():
         return self.data, self.guv
 
 
-    def calculate_figures(self, data, guv):
+    def calculate_figures1(self, data, guv):
 
         balance_sum = sum(item['amount'] for item in data if item['type'] in ['Eigenkapital', 'Fremdkapital'])
 
@@ -137,9 +137,9 @@ class KennzahlenService():
         return self.figures
 
 
-    def get_package(self):
-        data, guv = self.generate()
-        figures = self.calculate_figures(data, guv)
+    def get_package1(self):
+        data, guv = self.generate1()
+        figures = self.calculate_figures1(data, guv)
 
         return {
             'balance': data,
@@ -148,3 +148,145 @@ class KennzahlenService():
         }
 
 
+    @staticmethod
+    def generate2():
+        import random
+
+        # ===== Kapitalstruktur =====
+        ek = random.randint(100_000, 1_000_000)
+        fk = random.randint(100_000, 1_000_000)
+        gk = ek + fk
+
+        # ===== Umsatz =====
+        umsatz = round(random.uniform(0.8, 3.0) * ek, 2)
+
+        # ===== EBIT =====
+        ebit_marge = random.uniform(0.03, 0.25)
+        ebit = round(umsatz * ebit_marge, 2)
+
+        # ===== Zinsen =====
+        fk_zins = random.uniform(0.03, 0.10)
+        zins = round(fk * fk_zins, 2)
+
+        # ===== Gewinn vor Steuer / EBT =====
+        ebt = round(ebit - zins, 2)
+
+        steuersatz = random.uniform(0.15, 0.35)
+        net_income = round(ebt * (1 - steuersatz), 2)
+
+        # ===== Abschreibungen =====
+        abschreibungen = round(umsatz * random.uniform(0.03, 0.15), 2)
+
+        # ===== Cashflow-Elemente =====
+
+        # Pensionsrückstellungen
+        pens_change = round(random.uniform(-10_000, 50_000), 2)
+
+        # Working Capital Change (% vom Umsatz)
+        wc_change = round(umsatz * random.uniform(-0.05, 0.05), 2)
+
+        # Investitionen (Capex)
+        capex = round(umsatz * random.uniform(0.05, 0.20), 2)
+
+        return {
+            'ek': ek,
+            'fk': fk,
+            'gk': gk,
+            'umsatz': umsatz,
+            'zinsen': zins,
+            'ebt': ebt,
+            'steuer': round(ebt * steuersatz, 2),
+            'net_income': net_income,
+            'abschreibungen': abschreibungen,
+            'pensionsrueckstellungen': pens_change,
+            'working_capital': wc_change,
+            'investitionen': capex
+        }
+
+    @staticmethod
+    def calculate_figures2(data):
+        # ======================
+        # Profitability
+        # ======================
+
+        umsatzrendite = round(data['ebt'] / data['umsatz'], 4)
+
+        ekr = round((data['net_income'] / data['ek']) * 100, 2)
+        gkr = round((data['net_income'] / data['gk']) * 100, 2)
+
+        # ======================
+        # EBITDA / EBIT / NOPAT
+        # ======================
+
+        ebit = data['ebt'] + data['zinsen']
+
+        ebitda = ebit + data['abschreibungen']
+
+        tax_rate = data['steuer'] / data['ebt'] if data['ebt'] != 0 else 0
+
+        nopat = ebit * (1 - tax_rate)
+
+        # ======================
+        # Cash Flow
+        # ======================
+
+        ocf = (
+                data['net_income']
+                + data['abschreibungen']
+                + data['pensionsrueckstellungen']
+                - data['working_capital']
+        )
+
+        fcf = ocf - data['investitionen']
+
+        # ======================
+        # Capital / WACC / EVA
+        # ======================
+
+        # WACC (vereinfachte Annahme)
+        cost_of_equity = 0.10
+        cost_of_debt = 0.06
+
+        ek = data['ek']
+        fk = data['fk']
+        gk = data['gk']
+
+        wacc = (
+                (ek / gk) * cost_of_equity
+                + (fk / gk) * cost_of_debt * (1 - tax_rate)
+        )
+
+        capital_charge = gk * wacc
+
+        eva = nopat - capital_charge
+
+        # ======================
+        # Return
+        # ======================
+
+        return {
+            'umsatzrendite': round(umsatzrendite, 4),
+            'ekr': ekr,
+            'gkr': gkr,
+
+            'ebit': ebit,
+            'ebitda': ebitda,
+            'nopat': nopat,
+
+            'ocf': ocf,
+            'fcf': fcf,
+
+            'wacc': round(wacc, 4),
+            'kapitalkosten': capital_charge,
+            'eva': eva
+        }
+
+    @staticmethod
+    def get_package2():
+        data = KennzahlenService().generate2()
+        solutions = KennzahlenService.calculate_figures2(data)
+
+        return{
+            'data': data,
+            'solutions': solutions
+        }

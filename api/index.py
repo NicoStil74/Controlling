@@ -24,7 +24,7 @@ async def get_materialkosten():
 @app.get("/api/kennzahlen")
 @app.get("/kennzahlen")
 async def get_kennzahlen():
-    return kennzahlen_service.get_package()
+    return kennzahlen_service.get_package1()
 
 @app.get("/")
 async def health_check():
