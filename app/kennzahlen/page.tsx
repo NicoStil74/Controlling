@@ -88,12 +88,21 @@ export default function Kennzahlen() {
     const [activeType, setActiveType] = useState('standard')
     const [data2, setData2] = useState<any>(null)
     const [solutions2, setSolutions2] = useState<any>(null)
+    const [roundToInteger, setRoundToInteger] = useState(false)
 
     const modes = [
         { id: 'standard', label: 'Kennzahlen I', icon: '' },
         { id: 'kennzahlen2', label: 'Kennzahlen II', icon: '' },
         { id: 'kennzahlen3', label: 'Kennzahlen III', icon: '' },
     ]
+
+    const formatNumber = (val: number | undefined) => {
+        if (val === undefined) return '-';
+        if (roundToInteger) {
+            return Math.round(val).toLocaleString('de-DE');
+        }
+        return val.toLocaleString('de-DE', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+    }
 
     const fetchData = async () => {
         setLoading(true)
@@ -226,10 +235,15 @@ export default function Kennzahlen() {
             }
 
             const userValue = parseGermanNumber(userInput)
-            const correctValue = (currentFigures as any)[(currentMapping as any)[key]]
+            let correctValue = (currentFigures as any)[(currentMapping as any)[key]]
 
-            // Toleranz für Rundungsdifferenzen (0.1)
-            const isCorrect = Math.abs(userValue - correctValue) < 0.1
+            if (roundToInteger && activeType === 'kennzahlen2') {
+                correctValue = Math.round(correctValue)
+            }
+
+            // Toleranz für Rundungsdifferenzen (0.1 oder 0.5 bei Ganzzahlen)
+            const tolerance = roundToInteger ? 0.5 : 0.1
+            const isCorrect = Math.abs(userValue - correctValue) < tolerance
             newFeedback[key] = isCorrect ? 'correct' : 'wrong'
         })
 
@@ -246,7 +260,11 @@ export default function Kennzahlen() {
             setPreviousInputs(inputs)
             const solvedInputs: Record<string, string> = {}
             Object.keys(currentMapping).forEach(key => {
-                solvedInputs[key] = (currentFigures as any)[(currentMapping as any)[key]]?.toString().replace('.', ',') || ''
+                let val = (currentFigures as any)[(currentMapping as any)[key]]
+                if (roundToInteger && activeType === 'kennzahlen2') {
+                    val = Math.round(val)
+                }
+                solvedInputs[key] = val?.toString().replace('.', ',') || ''
             })
             setInputs(solvedInputs)
         } else {
@@ -504,57 +522,69 @@ export default function Kennzahlen() {
                 <div className="space-y-12">
                     {/* Daten Sektion */}
                     <div className="bg-white shadow-md rounded-lg border border-gray-200">
-                        <div className="bg-gray-100 px-6 py-4 border-b border-gray-200 flex items-center gap-2 rounded-t-lg">
+                        <div className="bg-gray-100 px-6 py-4 border-b border-gray-200 flex justify-between items-center rounded-t-lg">
                             <h2 className="text-xl font-semibold">Unternehmensdaten</h2>
+                            <label className="flex items-center gap-3 cursor-pointer group">
+                                <span className="text-sm font-bold text-zinc-600 group-hover:text-zinc-900 transition-colors">Nachkommastellen ausblenden</span>
+                                <div className="relative">
+                                    <input 
+                                        type="checkbox" 
+                                        className="sr-only peer" 
+                                        checked={roundToInteger}
+                                        onChange={() => setRoundToInteger(!roundToInteger)}
+                                    />
+                                    <div className="w-11 h-6 bg-zinc-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-blue-300 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:bg-blue-600"></div>
+                                </div>
+                            </label>
                         </div>
                         <div className="p-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                             <div className="space-y-1">
                                 <p className="text-xs font-bold uppercase text-gray-500">Eigenkapital</p>
-                                <p className="text-lg font-mono">{data2?.ek?.toLocaleString('de-DE')} €</p>
+                                <p className="text-lg font-mono">{formatNumber(data2?.ek)} €</p>
                             </div>
                             <div className="space-y-1">
                                 <p className="text-xs font-bold uppercase text-gray-500">Fremdkapital</p>
-                                <p className="text-lg font-mono">{data2?.fk?.toLocaleString('de-DE')} €</p>
+                                <p className="text-lg font-mono">{formatNumber(data2?.fk)} €</p>
                             </div>
                             <div className="space-y-1">
                                 <p className="text-xs font-bold uppercase text-gray-500">Gesamtkapital</p>
-                                <p className="text-lg font-mono">{data2?.gk?.toLocaleString('de-DE')} €</p>
+                                <p className="text-lg font-mono">{formatNumber(data2?.gk)} €</p>
                             </div>
                             <div className="space-y-1 border-t pt-4">
                                 <p className="text-xs font-bold uppercase text-gray-500">Umsatzerlöse</p>
-                                <p className="text-lg font-mono">{data2?.umsatz?.toLocaleString('de-DE')} €</p>
+                                <p className="text-lg font-mono">{formatNumber(data2?.umsatz)} €</p>
                             </div>
                             <div className="space-y-1 border-t pt-4">
-                                <p className="text-xs font-bold uppercase text-gray-500">Zinsaufwand</p>
-                                <p className="text-lg font-mono">{data2?.zinsen?.toLocaleString('de-DE')} €</p>
+                                <p className="text-xs font-bold uppercase text-gray-500">Fremdkapitalzinssatz</p>
+                                <p className="text-lg font-mono">{formatNumber(data2?.fk_zins * 100)} %</p>
                             </div>
                             <div className="space-y-1 border-t pt-4">
                                 <p className="text-xs font-bold uppercase text-gray-500">Ergebnis vor Steuer (EBT)</p>
-                                <p className="text-lg font-mono">{data2?.ebt?.toLocaleString('de-DE')} €</p>
+                                <p className="text-lg font-mono">{formatNumber(data2?.ebt)} €</p>
                             </div>
                             <div className="space-y-1 border-t pt-4">
                                 <p className="text-xs font-bold uppercase text-gray-500">Steuern</p>
-                                <p className="text-lg font-mono">{data2?.steuer?.toLocaleString('de-DE')} €</p>
+                                <p className="text-lg font-mono">{formatNumber(data2?.steuer)} €</p>
                             </div>
                             <div className="space-y-1 border-t pt-4">
                                 <p className="text-xs font-bold uppercase text-gray-500">Jahresüberschuss</p>
-                                <p className="text-lg font-mono">{data2?.net_income?.toLocaleString('de-DE')} €</p>
+                                <p className="text-lg font-mono">{formatNumber(data2?.net_income)} €</p>
                             </div>
                             <div className="space-y-1 border-t pt-4">
                                 <p className="text-xs font-bold uppercase text-gray-500">Abschreibungen</p>
-                                <p className="text-lg font-mono">{data2?.abschreibungen?.toLocaleString('de-DE')} €</p>
+                                <p className="text-lg font-mono">{formatNumber(data2?.abschreibungen)} €</p>
                             </div>
                             <div className="space-y-1 border-t pt-4">
                                 <p className="text-xs font-bold uppercase text-gray-500">Δ Pensionsrückstellungen</p>
-                                <p className="text-lg font-mono">{data2?.pensionsrueckstellungen?.toLocaleString('de-DE')} €</p>
+                                <p className="text-lg font-mono">{formatNumber(data2?.pensionsrueckstellungen)} €</p>
                             </div>
                             <div className="space-y-1 border-t pt-4">
                                 <p className="text-xs font-bold uppercase text-gray-500">Δ Working Capital</p>
-                                <p className="text-lg font-mono">{data2?.working_capital?.toLocaleString('de-DE')} €</p>
+                                <p className="text-lg font-mono">{formatNumber(data2?.working_capital)} €</p>
                             </div>
                             <div className="space-y-1 border-t pt-4">
                                 <p className="text-xs font-bold uppercase text-gray-500">Investitionen (Capex)</p>
-                                <p className="text-lg font-mono">{data2?.investitionen?.toLocaleString('de-DE')} €</p>
+                                <p className="text-lg font-mono">{formatNumber(data2?.investitionen)} €</p>
                             </div>
                         </div>
                     </div>
