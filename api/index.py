@@ -15,6 +15,7 @@ app.add_middleware(
 
 materialkosten_service = MaterialCostService()
 kennzahlen_service = KennzahlenService()
+
 @app.get("/api/materialkosten")
 @app.get("/materialkosten")
 async def get_materialkosten():
