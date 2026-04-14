@@ -19,6 +19,7 @@ interface ProzessDaten {
   psych_cost_rate: number;
   psych_umlagesatz: number;
   psych_gesamt: number;
+  abteilung : number;
   abteilung_umlagesatz: number;
 }
 
