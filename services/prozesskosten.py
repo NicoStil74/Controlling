@@ -1,8 +1,8 @@
 import json
 import random as rd
 
-def get_cost_rate(amount: int, cost: int):
-    return round(amount / cost,2)
+def get_cost_rate(amount, cost):
+    return cost / amount
 
 
 def get_umlagesatz(cost_rate, umlagesatz):
@@ -37,7 +37,7 @@ class ProzessKosten():
         summe_lmi = application_cost + interview_cost + psych_cost
         summe_lmn = department_cost
 
-        umlagesatz = summe_lmn / summe_lmi
+        umlagesatz = round(summe_lmn / summe_lmi,2)
 
         # Calculation of solutions
         appl_kostensatz = get_cost_rate(rcvd_applications, application_cost)
@@ -75,16 +75,12 @@ class ProzessKosten():
             'psych_gesamt': psych_gesamtkostensatz,
 
             # ===== Abteilungsleiter ===== 
+            'abteilung': department_cost,
             'abteilung_umlagesatz':umlagesatz
 
         }
 
 
-
-    
-
-
-    
 
 if __name__ == '__main__': 
     data = ProzessKosten.generate_scenario()

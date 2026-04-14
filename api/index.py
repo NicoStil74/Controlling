@@ -3,6 +3,7 @@ from fastapi.middleware.cors import CORSMiddleware
 
 from services.kennzahlen import KennzahlenService
 from services.materialkosten import MaterialCostService
+from services.prozesskosten import ProzessKosten
 
 app = FastAPI(title="Learning App API")
 
@@ -37,7 +38,11 @@ async def get_kennzahlen2():
 async def get_kennzahlen3():
     return kennzahlen_service.get_package3()
 
+@app.get("/api/prozesskosten")
+@app.get("/prozesskosten")
+async def get_prozesskosten():
+    return ProzessKosten.generate_scenario()
+
 @app.get("/")
 async def health_check():
     return {"Connected": True}
-
