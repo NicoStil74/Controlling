@@ -81,6 +81,59 @@ class ProzessKosten():
         }
 
 
+    @staticmethod
+    def generate_scenario2():
+        personalkosten = rd.randint(200, 500) * 1000
+        sachkosten = int(personalkosten * rd.uniform(0.55, 0.75))
+        sonstige_kosten = int(sachkosten * rd.uniform(0.6, 0.8))
+
+        letters = ['A', 'B', 'C', 'D']
+
+        scenario_dict = {
+            'personalkosten': personalkosten,
+            'sachkosten': sachkosten,
+            'sonstige_kosten': sonstige_kosten
+        }
+
+        for l in letters: 
+            scenario_dict[l] = {
+                'fertigungs_einzelkosten': rd.randint(1,7) * 10,
+                'produktionsmenge': rd.randint(2,30) * 1000,
+                'bauplanpositionen': rd.randint(1,10) * 10,
+            }
+
+        return scenario_dict
+
+
+    @staticmethod
+    def get_solutions2(data):
+        gemeinkosten_arten = ['personalkosten', 'sachkosten', 'sonstige_kosten']
+        letters = ['A', 'B', 'C', 'D']
+        
+        # ===== Summe Einzelkosten ===== 
+        einzelkosten = 0
+        for k in data.keys():
+            if k in letters: 
+                einzelkosten += data[k]['fertigungs_einzelkosten'] * data[k]['produktionsmenge']
+
+        gemeinkosten = sum([v for k,v in data.items() if k in gemeinkosten_arten])
+
+        zuschlagssatz = round(gemeinkosten / einzelkosten,2)
+
+        solution_dict = {            
+            'gemeinkosten': gemeinkosten,
+            'einzelkosten': einzelkosten,
+            'zuschlagssatz': zuschlagssatz
+            }
+
+        
+        # ===== Gemeinkosten für jedes Produkt auf Basis des Zuschlagssatz berechnen ===== 
+        for k in data.keys():
+            if k in letters:
+                solution_dict[f'gemeinkosten_{k}'] = round(data[k]['fertigungs_einzelkosten'] * zuschlagssatz,2)
+
+        return solution_dict
+        
 
 if __name__ == '__main__': 
     data = ProzessKosten.generate_scenario()

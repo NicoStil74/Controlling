@@ -23,6 +23,29 @@ interface ProzessDaten {
   abteilung_umlagesatz: number;
 }
 
+interface Prozessdaten2{
+    PersonalKosten: number;
+    SachKosten: number;
+    SonstigeKosten: number; 
+    Summe: number;
+
+    ProduktAFE: number;
+    ProduktAPM: number;
+    BauplanPositionA: number;
+
+    ProduktBFE: number;
+    ProduktBPM: number;
+    BauplanPositionB: number;
+
+    ProduktCFE: number;
+    ProduktCPM: number;
+    BauplanPositionC: number;
+    
+    ProduktDFE: number;
+    ProduktDPM: number;
+    BauplanPositionD: number;
+}
+
 type InputKey = 
   | 'appl_kostensatz' | 'appl_umlagesatz' | 'appl_gesamt'
   | 'int_kostensatz' | 'int_umlagesatz' | 'int_gesamt'
