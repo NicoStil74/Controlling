@@ -43,6 +43,11 @@ async def get_kennzahlen3():
 async def get_prozesskosten():
     return ProzessKosten.generate_scenario()
 
+@app.get("/api/prozesskosten2")
+@app.get("/prozesskosten2")
+async def get_prozesskosten2():
+    return ProzessKosten.generate_scenario2()
+
 @app.get("/")
 async def health_check():
     return {"Connected": True}
