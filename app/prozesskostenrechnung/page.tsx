@@ -53,6 +53,7 @@ type InputKey =
   | 'general_umlagesatz';
 
 export default function ProzesskostenPage() {
+  const [activeTab, setActiveTab] = useState(1);
   const [data, setData] = useState<ProzessDaten | null>(null);
   const [loading, setLoading] = useState(true);
   const [inputs, setInputs] = useState<Record<InputKey, string>>({
@@ -239,84 +240,130 @@ export default function ProzesskostenPage() {
           </div>
         </header>
 
-        <section className="bg-white rounded-[2rem] border-2 border-zinc-100 shadow-[0_2px_15px_-3px_rgba(0,0,0,0.07)] overflow-hidden">
-            <div className="bg-zinc-50/50 border-b border-zinc-100 px-8 py-4 flex items-center justify-between">
-                <h2 className="font-bold text-zinc-900 text-xl">Prozesskostenkalkulation</h2>
-                <div className="flex gap-4">
-                    <button 
-                        onClick={toggleSolutions}
-                        className={`px-6 py-2 rounded-xl font-bold transition-all shadow-sm active:scale-95 text-sm ${
-                            showSolutions ? 'bg-zinc-800 text-white hover:bg-zinc-700' : 'bg-zinc-100 text-zinc-900 hover:bg-zinc-200'
-                        }`}
-                    >
-                        {showSolutions ? 'Lösungen ausblenden' : 'Lösungen anzeigen'}
-                    </button>
-                    <button 
-                        onClick={checkSolutions}
-                        className="px-6 py-2 bg-zinc-900 text-white rounded-xl font-bold hover:bg-zinc-800 transition-colors shadow-lg active:scale-95 text-sm"
-                    >
-                        Prüfen
-                    </button>
-                </div>
-            </div>
-            
-            <div className="overflow-x-auto p-4">
-              <table className="min-w-full border-collapse">
-                <thead className="bg-gray-100">
-                  <tr>
-                    <th className="border border-gray-300 px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Prozess</th>
-                    <th className="border border-gray-300 px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Cost driver</th>
-                    <th className="border border-gray-300 px-4 py-3 text-right text-xs font-semibold text-gray-600 uppercase">Planprozessmenge</th>
-                    <th className="border border-gray-300 px-4 py-3 text-right text-xs font-semibold text-gray-600 uppercase">Planprozesskosten in €</th>
-                    <th className="border border-gray-300 px-4 py-3 text-center text-xs font-semibold text-gray-600 uppercase">Kostensatz (lm)</th>
-                    <th className="border border-gray-300 px-4 py-3 text-center text-xs font-semibold text-gray-600 uppercase">Umlagesatz (lm)</th>
-                    <th className="border border-gray-300 px-4 py-3 text-center text-xs font-semibold text-gray-600 uppercase">Gesamt €</th>
-                  </tr>
-                </thead>
-                <tbody className="bg-white">
-                  <tr>
-                    <td className="border border-gray-300 px-4 py-4 text-sm font-medium text-gray-900">Bestätigung von Bewerbungen</td>
-                    <td className="border border-gray-300 px-4 py-4 text-sm text-gray-900">Anzahl Bestätigungen</td>
-                    <td className="border border-gray-300 px-4 py-4 text-sm text-right font-mono">{data?.application_amt.toLocaleString('de-DE')}</td>
-                    <td className="border border-gray-300 px-4 py-4 text-sm text-right font-mono">{data?.application_cost.toLocaleString('de-DE', { minimumFractionDigits: 2 })}</td>
-                    <InputCell inputKey="appl_kostensatz" />
-                    <InputCell inputKey="appl_umlagesatz" />
-                    <InputCell inputKey="appl_gesamt" />
-                  </tr>
-                  <tr>
-                    <td className="border border-gray-300 px-4 py-4 text-sm font-medium text-gray-900">Bewerbungsgespräche</td>
-                    <td className="border border-gray-300 px-4 py-4 text-sm text-gray-900">Anzahl Gespräche</td>
-                    <td className="border border-gray-300 px-4 py-4 text-sm text-right font-mono">{data?.interview_amt.toLocaleString('de-DE')}</td>
-                    <td className="border border-gray-300 px-4 py-4 text-sm text-right font-mono">{data?.interview_cost.toLocaleString('de-DE', { minimumFractionDigits: 2 })}</td>
-                    <InputCell inputKey="int_kostensatz" />
-                    <InputCell inputKey="int_umlagesatz" />
-                    <InputCell inputKey="int_gesamt" />
-                  </tr>
-                  <tr>
-                    <td className="border border-gray-300 px-4 py-4 text-sm font-medium text-gray-900">Psychologische Tests</td>
-                    <td className="border border-gray-300 px-4 py-4 text-sm text-gray-900">Anzahl Tests</td>
-                    <td className="border border-gray-300 px-4 py-4 text-sm text-right font-mono">{data?.psych_amt.toLocaleString('de-DE')}</td>
-                    <td className="border border-gray-300 px-4 py-4 text-sm text-right font-mono">{data?.psych_cost.toLocaleString('de-DE', { minimumFractionDigits: 2 })}</td>
-                    <InputCell inputKey="psych_kostensatz" />
-                    <InputCell inputKey="psych_umlagesatz" />
-                    <InputCell inputKey="psych_gesamt" />
-                  </tr>
-                  <tr className="font-bold">
-                    <td className="border border-gray-300 px-4 py-4 text-sm text-zinc-900">Abteilung leiten</td>
-                    <td className="border border-gray-300 px-4 py-4 text-sm text-gray-900"></td>
-                    <td className="border border-gray-300 px-4 py-4 text-sm text-right font-mono"></td>
-                    <td className="border border-gray-300 px-4 py-4 text-sm text-right font-mono text-zinc-900">{(data?.abteilung || 0).toLocaleString('de-DE', { minimumFractionDigits: 2 })}</td>
-                    <td className="border border-gray-300 px-4 py-4 text-sm text-center"></td>
-                    <InputCell inputKey="general_umlagesatz" suffix="%" />
-                    <td className="border border-gray-300 px-4 py-4 text-sm text-center"></td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-            <div className="p-8 bg-zinc-50 border-t border-zinc-100 flex flex-col items-center gap-4">
-                <p className="text-sm text-zinc-500 font-medium">Berechne die Kostensätze für die lmi-Prozesse basierend auf dem Umlagesatz der lmn-Prozesse.</p>
-            </div>
-        </section>
+        <div className="flex border-b border-zinc-200">
+          <button 
+            onClick={() => setActiveTab(1)}
+            className={`px-6 py-3 font-bold text-sm transition-all border-b-2 ${activeTab === 1 ? 'border-zinc-900 text-zinc-900' : 'border-transparent text-zinc-400 hover:text-zinc-600'}`}
+          >
+            Übung 1
+          </button>
+          <button 
+            onClick={() => setActiveTab(2)}
+            className={`px-6 py-3 font-bold text-sm transition-all border-b-2 ${activeTab === 2 ? 'border-zinc-900 text-zinc-900' : 'border-transparent text-zinc-400 hover:text-zinc-600'}`}
+          >
+            Übung 2
+          </button>
+        </div>
+
+        {activeTab === 1 ? (
+          <section className="bg-white rounded-[2rem] border-2 border-zinc-100 shadow-[0_2px_15px_-3px_rgba(0,0,0,0.07)] overflow-hidden">
+              <div className="bg-zinc-50/50 border-b border-zinc-100 px-8 py-4 flex items-center justify-between">
+                  <h2 className="font-bold text-zinc-900 text-xl">Übung 1: Prozesskostenkalkulation</h2>
+                  <div className="flex gap-4">
+                      <button 
+                          onClick={toggleSolutions}
+                          className={`px-6 py-2 rounded-xl font-bold transition-all shadow-sm active:scale-95 text-sm ${
+                              showSolutions ? 'bg-zinc-800 text-white hover:bg-zinc-700' : 'bg-zinc-100 text-zinc-900 hover:bg-zinc-200'
+                          }`}
+                      >
+                          {showSolutions ? 'Lösungen ausblenden' : 'Lösungen anzeigen'}
+                      </button>
+                      <button 
+                          onClick={checkSolutions}
+                          className="px-6 py-2 bg-zinc-900 text-white rounded-xl font-bold hover:bg-zinc-800 transition-colors shadow-lg active:scale-95 text-sm"
+                      >
+                          Prüfen
+                      </button>
+                  </div>
+              </div>
+              
+              <div className="overflow-x-auto p-4">
+                <table className="min-w-full border-collapse">
+                  <thead className="bg-gray-100">
+                    <tr>
+                      <th className="border border-gray-300 px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Prozess</th>
+                      <th className="border border-gray-300 px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Cost driver</th>
+                      <th className="border border-gray-300 px-4 py-3 text-right text-xs font-semibold text-gray-600 uppercase">Planprozessmenge</th>
+                      <th className="border border-gray-300 px-4 py-3 text-right text-xs font-semibold text-gray-600 uppercase">Planprozesskosten in €</th>
+                      <th className="border border-gray-300 px-4 py-3 text-center text-xs font-semibold text-gray-600 uppercase">Kostensatz (lm)</th>
+                      <th className="border border-gray-300 px-4 py-3 text-center text-xs font-semibold text-gray-600 uppercase">Umlagesatz (lm)</th>
+                      <th className="border border-gray-300 px-4 py-3 text-center text-xs font-semibold text-gray-600 uppercase">Gesamt €</th>
+                    </tr>
+                  </thead>
+                  <tbody className="bg-white">
+                    <tr>
+                      <td className="border border-gray-300 px-4 py-4 text-sm font-medium text-gray-900">Bestätigung von Bewerbungen</td>
+                      <td className="border border-gray-300 px-4 py-4 text-sm text-gray-900">Anzahl Bestätigungen</td>
+                      <td className="border border-gray-300 px-4 py-4 text-sm text-right font-mono">{data?.application_amt.toLocaleString('de-DE')}</td>
+                      <td className="border border-gray-300 px-4 py-4 text-sm text-right font-mono">{data?.application_cost.toLocaleString('de-DE', { minimumFractionDigits: 2 })}</td>
+                      <InputCell inputKey="appl_kostensatz" />
+                      <InputCell inputKey="appl_umlagesatz" />
+                      <InputCell inputKey="appl_gesamt" />
+                    </tr>
+                    <tr>
+                      <td className="border border-gray-300 px-4 py-4 text-sm font-medium text-gray-900">Bewerbungsgespräche</td>
+                      <td className="border border-gray-300 px-4 py-4 text-sm text-gray-900">Anzahl Gespräche</td>
+                      <td className="border border-gray-300 px-4 py-4 text-sm text-right font-mono">{data?.interview_amt.toLocaleString('de-DE')}</td>
+                      <td className="border border-gray-300 px-4 py-4 text-sm text-right font-mono">{data?.interview_cost.toLocaleString('de-DE', { minimumFractionDigits: 2 })}</td>
+                      <InputCell inputKey="int_kostensatz" />
+                      <InputCell inputKey="int_umlagesatz" />
+                      <InputCell inputKey="int_gesamt" />
+                    </tr>
+                    <tr>
+                      <td className="border border-gray-300 px-4 py-4 text-sm font-medium text-gray-900">Psychologische Tests</td>
+                      <td className="border border-gray-300 px-4 py-4 text-sm text-gray-900">Anzahl Tests</td>
+                      <td className="border border-gray-300 px-4 py-4 text-sm text-right font-mono">{data?.psych_amt.toLocaleString('de-DE')}</td>
+                      <td className="border border-gray-300 px-4 py-4 text-sm text-right font-mono">{data?.psych_cost.toLocaleString('de-DE', { minimumFractionDigits: 2 })}</td>
+                      <InputCell inputKey="psych_kostensatz" />
+                      <InputCell inputKey="psych_umlagesatz" />
+                      <InputCell inputKey="psych_gesamt" />
+                    </tr>
+                    <tr className="font-bold">
+                      <td className="border border-gray-300 px-4 py-4 text-sm text-zinc-900">Abteilung leiten</td>
+                      <td className="border border-gray-300 px-4 py-4 text-sm text-gray-900"></td>
+                      <td className="border border-gray-300 px-4 py-4 text-sm text-right font-mono"></td>
+                      <td className="border border-gray-300 px-4 py-4 text-sm text-right font-mono text-zinc-900">{(data?.abteilung || 0).toLocaleString('de-DE', { minimumFractionDigits: 2 })}</td>
+                      <td className="border border-gray-300 px-4 py-4 text-sm text-center"></td>
+                      <InputCell inputKey="general_umlagesatz" suffix="%" />
+                      <td className="border border-gray-300 px-4 py-4 text-sm text-center"></td>
+                    </tr>
+                  </tbody>
+                </table>
+              </div>
+              <div className="p-8 bg-zinc-50 border-t border-zinc-100 flex flex-col items-center gap-4">
+                  <p className="text-sm text-zinc-500 font-medium">Berechne die Kostensätze für die lmi-Prozesse basierend auf dem Umlagesatz der lmn-Prozesse.</p>
+              </div>
+          </section>
+        ) : (
+          <section className="bg-white rounded-[2rem] border-2 border-zinc-100 shadow-[0_2px_15px_-3px_rgba(0,0,0,0.07)] overflow-hidden">
+              <div className="bg-zinc-50/50 border-b border-zinc-100 px-8 py-4">
+                  <h2 className="font-bold text-zinc-900 text-xl">Übung 2: Zuschlagskalkulation</h2>
+              </div>
+              
+              <div className="overflow-x-auto p-4">
+                <table className="min-w-full border-collapse">
+                  <thead className="bg-gray-100">
+                    <tr>
+                      <th className="border border-gray-300 px-4 py-3 text-left text-xs font-semibold text-gray-600 uppercase">Produkt</th>
+                      <th className="border border-gray-300 px-4 py-3 text-right text-xs font-semibold text-gray-600 uppercase">Einzelkosten der Fertigung (in €)</th>
+                      <th className="border border-gray-300 px-4 py-3 text-right text-xs font-semibold text-gray-600 uppercase">Produktionsmenge (Stück)</th>
+                      <th className="border border-gray-300 px-4 py-3 text-right text-xs font-semibold text-gray-600 uppercase">Bauplanpositionen pro Fahrrad</th>
+                    </tr>
+                  </thead>
+                  <tbody className="bg-white">
+                    {['Produkt A', 'Produkt B', 'Produkt C', 'Produkt D'].map((product) => (
+                      <tr key={product}>
+                        <td className="border border-gray-300 px-4 py-4 text-sm font-medium text-gray-900">{product}</td>
+                        <td className="border border-gray-300 px-4 py-4 text-sm text-right font-mono"></td>
+                        <td className="border border-gray-300 px-4 py-4 text-sm text-right font-mono"></td>
+                        <td className="border border-gray-300 px-4 py-4 text-sm text-right font-mono"></td>
+                      </tr>
+                    ))}
+                  </tbody>
+                </table>
+              </div>
+          </section>
+        )}
       </div>
     </main>
   );
