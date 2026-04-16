@@ -102,6 +102,9 @@ class ProzessKosten():
                 'bauplanpositionen': rd.randint(1,10) * 10,
             }
 
+        solutions = ProzessKosten.get_solutions2(scenario_dict)
+        scenario_dict['solutions'] = solutions
+
         return scenario_dict
 
 
@@ -130,7 +133,7 @@ class ProzessKosten():
         # ===== Gemeinkosten für jedes Produkt auf Basis des Zuschlagssatz berechnen ===== 
         for k in data.keys():
             if k in letters:
-                solution_dict[f'gemeinkosten_{k}'] = round(data[k]['fertigungs_einzelkosten'] * zuschlagssatz,2)
+                solution_dict[f'gemeinkosten_{k}'] = round(data[k]['fertigungs_einzelkosten'] * zuschlagssatz,2) + data[k]['fertigungs_einzelkosten']
 
         return solution_dict
         
